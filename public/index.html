@@ -55,16 +55,16 @@ input:focus,textarea:focus{border-color:var(--accent)}
 .list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .chat-item{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--border);cursor:pointer}
 .chat-item:active{background:var(--bg2)}
-.av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#4a7dff,#a34aff);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0;background-size:cover;background-position:center}
+.av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#4a7dff,#a34aff);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0}
 .av.admin{background:linear-gradient(135deg,#ff2b2b,#a30000)}
 .av.group{background:linear-gradient(135deg,#22c55e,#15803d)}
 .av.banned{filter:grayscale(1);opacity:.55}
 .chat-meta{flex:1;min-width:0}
 .chat-meta .name{font-weight:600;font-size:15px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .chat-meta .last{color:var(--text2);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-.badge-admin{background:var(--admin);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px}
-.badge-group{background:var(--group);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px}
-.badge-ban{background:#444;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-transform:uppercase;letter-spacing:.5px}
+.badge-admin{background:var(--admin);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-transform:uppercase}
+.badge-group{background:var(--group);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-transform:uppercase}
+.badge-ban{background:#444;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-transform:uppercase}
 
 .chat-hdr{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
 .chat-hdr .info{flex:1;min-width:0}
@@ -119,7 +119,7 @@ input:focus,textarea:focus{border-color:var(--accent)}
 .modal-actions{display:flex;gap:8px;margin-top:16px}
 .modal-actions .btn{flex:1}
 
-.emoji-pick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.emoji-pick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:50vh;overflow-y:auto}
 .emoji-pick button{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px;font-size:22px;line-height:1;width:46px;height:46px;display:flex;align-items:center;justify-content:center}
 
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#222;color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;opacity:0;transition:.25s;z-index:200;max-width:90%;text-align:center}
@@ -127,13 +127,8 @@ input:focus,textarea:focus{border-color:var(--accent)}
 
 .empty{text-align:center;color:var(--text2);padding:40px 20px;font-size:14px;line-height:1.5}
 
-/* ============================================
-   АДАПТАЦИЯ ПОД ПК И ПЛАНШЕТ
-   ============================================ */
 @media(min-width:700px){
   body{background:var(--bg)}
-
-  /* Экран растягивается, содержимое центрируется */
   .auth-wrap{max-width:480px;padding:40px 24px}
   .hdr{padding:16px 32px}
   .hdr h1{font-size:22px}
@@ -148,19 +143,11 @@ input:focus,textarea:focus{border-color:var(--accent)}
   .modal-box{max-width:520px;padding:24px}
   .bubble{max-width:65%}
 }
-
-@media(min-width:1200px){
-  .list{padding:0 max(80px, calc((100% - 900px) / 2))}
-  .chat-item{padding-left:max(80px, calc((100% - 900px) / 2));padding-right:max(80px, calc((100% - 900px) / 2))}
-  .msgs{padding:24px max(80px, calc((100% - 900px) / 2))}
-  .input-bar{padding:16px max(80px, calc((100% - 900px) / 2))}
-  .page{padding:28px max(80px, calc((100% - 900px) / 2))}
-}
 </style>
 </head>
 <body>
 
-<!-- ============ AUTH ============ -->
+<!-- AUTH -->
 <div class="screen active" id="scr-auth">
   <div class="auth-wrap">
     <div class="logo">Wenchat</div>
@@ -169,32 +156,26 @@ input:focus,textarea:focus{border-color:var(--accent)}
       <button class="tab active" id="tab-login" type="button">Вход</button>
       <button class="tab" id="tab-register" type="button">Регистрация</button>
     </div>
-    <div class="field">
-      <label>Ник</label>
-      <input id="in-nick" maxlength="20" placeholder="например, Wendrt" autocomplete="off" autocapitalize="off" spellcheck="false">
-    </div>
-    <div class="field">
-      <label>Пароль</label>
-      <input id="in-pass" type="password" placeholder="••••••" autocomplete="off">
-    </div>
+    <div class="field"><label>Ник</label><input id="in-nick" maxlength="20" placeholder="например, Wendrt" autocomplete="off" autocapitalize="off"></div>
+    <div class="field"><label>Пароль</label><input id="in-pass" type="password" placeholder="••••••" autocomplete="off"></div>
     <button class="btn" id="btn-auth" type="button" style="width:100%;margin-top:8px">Войти</button>
     <div class="err" id="auth-err"></div>
   </div>
 </div>
 
-<!-- ============ CHAT LIST ============ -->
+<!-- LIST -->
 <div class="screen" id="scr-list">
   <div class="hdr">
     <h1>Wenchat</h1>
-    <button class="icon-btn" id="btn-search" type="button" title="Найти по ID">🔍</button>
-    <button class="icon-btn" id="btn-newgroup" type="button" title="Создать группу">👥</button>
-    <button class="icon-btn" id="btn-shop" type="button" title="Wenshop">🛒</button>
-    <button class="icon-btn" id="btn-settings" type="button" title="Настройки">⚙️</button>
+    <button class="icon-btn" id="btn-search" type="button">🔍</button>
+    <button class="icon-btn" id="btn-newgroup" type="button">👥</button>
+    <button class="icon-btn" id="btn-shop" type="button">🛒</button>
+    <button class="icon-btn" id="btn-settings" type="button">⚙️</button>
   </div>
   <div class="list" id="chat-list"></div>
 </div>
 
-<!-- ============ CHAT VIEW ============ -->
+<!-- CHAT -->
 <div class="screen" id="scr-chat">
   <div class="chat-hdr">
     <button class="icon-btn" id="btn-back" type="button">←</button>
@@ -203,7 +184,7 @@ input:focus,textarea:focus{border-color:var(--accent)}
       <div class="n" id="cv-name">—</div>
       <div class="sub" id="cv-sub"></div>
     </div>
-    <button class="icon-btn" id="btn-chat-menu" type="button" title="Меню">⋮</button>
+    <button class="icon-btn" id="btn-chat-menu" type="button">⋮</button>
   </div>
   <div class="msgs" id="msgs"></div>
   <div class="input-bar">
@@ -213,7 +194,7 @@ input:focus,textarea:focus{border-color:var(--accent)}
   </div>
 </div>
 
-<!-- ============ SETTINGS ============ -->
+<!-- SETTINGS -->
 <div class="screen" id="scr-settings">
   <div class="hdr">
     <button class="icon-btn" id="btn-back-s" type="button">←</button>
@@ -251,7 +232,7 @@ input:focus,textarea:focus{border-color:var(--accent)}
   </div>
 </div>
 
-<!-- ============ ADMIN ============ -->
+<!-- ADMIN -->
 <div class="screen" id="scr-admin">
   <div class="hdr">
     <button class="icon-btn" id="btn-back-a" type="button">←</button>
@@ -275,18 +256,16 @@ input:focus,textarea:focus{border-color:var(--accent)}
     </div>
     <div class="card">
       <h3>🚫 Управление пользователями</h3>
-      <p style="font-size:12px;color:var(--text2);margin:0 0 10px">Бан / разбан, права, красный ник</p>
       <div id="admin-all"></div>
     </div>
     <div class="card" style="border-color:#ff2b2b55">
       <h3 style="color:var(--admin)">🗑️ Опасная зона</h3>
-      <p style="font-size:12px;color:var(--text2);margin:0 0 10px">Полный сброс базы</p>
       <button class="btn danger" style="width:100%" id="btn-wipe" type="button">Очистить базу</button>
     </div>
   </div>
 </div>
 
-<!-- ============ SHOP ============ -->
+<!-- SHOP -->
 <div class="screen" id="scr-shop">
   <div class="hdr">
     <button class="icon-btn" id="btn-back-sh" type="button">←</button>
@@ -298,11 +277,10 @@ input:focus,textarea:focus{border-color:var(--accent)}
   </div>
 </div>
 
-<!-- ============ МОДАЛКА: ПОИСК ============ -->
+<!-- MODAL: SEARCH -->
 <div class="modal" id="modal-search">
   <div class="modal-box">
     <h3>🔍 Найти по ID</h3>
-    <p style="font-size:13px;color:var(--text2);margin:0 0 12px">Введи ID (6 цифр)</p>
     <input id="in-search-id" placeholder="000000" maxlength="6" inputmode="numeric" style="font-family:monospace;font-size:20px;letter-spacing:4px;text-align:center">
     <div class="err" id="search-err"></div>
     <div class="modal-actions">
@@ -312,14 +290,11 @@ input:focus,textarea:focus{border-color:var(--accent)}
   </div>
 </div>
 
-<!-- ============ МОДАЛКА: ГРУППА ============ -->
+<!-- MODAL: GROUP -->
 <div class="modal" id="modal-group">
   <div class="modal-box">
     <h3>👥 Новая группа</h3>
-    <div class="field">
-      <label>Название</label>
-      <input id="in-group-name" maxlength="30" placeholder="Друзья" autocomplete="off">
-    </div>
+    <div class="field"><label>Название</label><input id="in-group-name" maxlength="30" placeholder="Друзья"></div>
     <label style="font-size:13px;color:var(--text2);display:block;margin-top:10px">Участники:</label>
     <div id="group-users" style="margin-top:8px;max-height:40vh;overflow-y:auto"></div>
     <div class="err" id="group-err"></div>
@@ -330,7 +305,7 @@ input:focus,textarea:focus{border-color:var(--accent)}
   </div>
 </div>
 
-<!-- ============ МОДАЛКА: ЭМОДЗИ ============ -->
+<!-- MODAL: EMOJI -->
 <div class="modal" id="modal-emoji">
   <div class="modal-box">
     <h3>😀 Эмодзи</h3>
@@ -341,27 +316,24 @@ input:focus,textarea:focus{border-color:var(--accent)}
   </div>
 </div>
 
-<!-- ============ МОДАЛКА: МЕНЮ СООБЩЕНИЯ ============ -->
+<!-- MODAL: MSG -->
 <div class="modal" id="modal-msg">
   <div class="modal-box">
-    <h3 id="msg-title">Сообщение</h3>
+    <h3>Удалить сообщение?</h3>
     <div id="msg-text" style="background:var(--bg2);padding:12px;border-radius:10px;font-size:14px;color:var(--text2);margin-bottom:10px;word-wrap:break-word"></div>
-    <button class="btn danger" style="width:100%" id="btn-msg-delete" type="button">🗑️ Удалить сообщение</button>
+    <button class="btn danger" style="width:100%" id="btn-msg-delete" type="button">🗑️ Удалить</button>
     <div class="modal-actions">
       <button class="btn ghost" id="btn-msg-cancel" type="button">Закрыть</button>
     </div>
   </div>
 </div>
 
-<!-- ============ МОДАЛКА: БАН ============ -->
+<!-- MODAL: BAN -->
 <div class="modal" id="modal-ban">
   <div class="modal-box">
     <h3 id="ban-title">Забанить?</h3>
-    <p style="font-size:14px;color:var(--text2);margin:0 0 12px" id="ban-desc">Пользователь не сможет войти в Wenchat.</p>
-    <div class="field">
-      <label>Причина (необязательно)</label>
-      <input id="in-ban-reason" placeholder="Например: мат в чате" maxlength="80">
-    </div>
+    <p style="font-size:14px;color:var(--text2);margin:0 0 12px">Пользователь не сможет войти.</p>
+    <div class="field"><label>Причина</label><input id="in-ban-reason" placeholder="Например: мат" maxlength="80"></div>
     <div class="modal-actions">
       <button class="btn ghost" id="btn-ban-cancel" type="button">Отмена</button>
       <button class="btn danger" id="btn-ban-confirm" type="button">Забанить</button>
@@ -372,86 +344,8 @@ input:focus,textarea:focus{border-color:var(--accent)}
 <div class="toast" id="toast"></div>
 
 <script>
-/* =========================================================
-   НАСТРОЙКИ
-   ========================================================= */
-var DEV_CODE = "Wendrt-Super-Secret-Dev-Code-2025-Xyz!";
-var ADMIN_NICK = "Wendrt";
-var WIPE_ON_START = true;
-
-/* =========== ОЧИСТКА ПРИ ПЕРВОМ ЗАПУСКЕ =========== */
-if(WIPE_ON_START){
-  var wiped = localStorage.getItem('wc_wiped_v3');
-  if(!wiped){
-    localStorage.removeItem('wc_users');
-    localStorage.removeItem('wc_chats');
-    localStorage.removeItem('wc_groups');
-    localStorage.removeItem('wc_current');
-    localStorage.removeItem('wc_nextId');
-    localStorage.setItem('wc_wiped_v3', '1');
-  }
-}
-
-/* =========== ХРАНИЛИЩЕ =========== */
-var DB = {
-  users: JSON.parse(localStorage.getItem('wc_users') || '{}'),
-  chats: JSON.parse(localStorage.getItem('wc_chats') || '{}'),
-  groups: JSON.parse(localStorage.getItem('wc_groups') || '{}'),
-  current: localStorage.getItem('wc_current') || null,
-  nextId: parseInt(localStorage.getItem('wc_nextId') || '1')
-};
-function save(){
-  localStorage.setItem('wc_users', JSON.stringify(DB.users));
-  localStorage.setItem('wc_chats', JSON.stringify(DB.chats));
-  localStorage.setItem('wc_groups', JSON.stringify(DB.groups));
-  localStorage.setItem('wc_nextId', String(DB.nextId));
-  if(DB.current) localStorage.setItem('wc_current', DB.current);
-  else localStorage.removeItem('wc_current');
-}
-function genId(){
-  var id = String(DB.nextId).padStart(6, '0');
-  DB.nextId++;
-  return id;
-}
-function findUserById(id){
-  var keys = Object.keys(DB.users);
-  for(var i=0;i<keys.length;i++){
-    if(DB.users[keys[i]].id === id) return DB.users[keys[i]];
-  }
-  return null;
-}
-
-/* =========== SHOP =========== */
-var SHOP = [
-  {id:'nick_blue', title:'Синий ник', desc:'Цвет ника: синий', price:50, color:'#4a7dff', cat:'color'},
-  {id:'nick_green', title:'Зелёный ник', desc:'Цвет ника: зелёный', price:50, color:'#22c55e', cat:'color'},
-  {id:'nick_purple', title:'Фиолетовый ник', desc:'Цвет ника: фиолетовый', price:80, color:'#a855f7', cat:'color'},
-  {id:'nick_gold', title:'Золотой ник', desc:'Цвет ника: золотой', price:150, color:'#ffb800', cat:'color'},
-  {id:'nick_pink', title:'Розовый ник', desc:'Цвет ника: розовый', price:80, color:'#ff4d9e', cat:'color'},
-  {id:'nick_cyan', title:'Голубой ник', desc:'Цвет ника: голубой', price:70, color:'#06b6d4', cat:'color'},
-  {id:'nick_orange', title:'Оранжевый ник', desc:'Цвет ника: оранжевый', price:70, color:'#ff7a00', cat:'color'},
-  {id:'badge_star', title:'Значок ⭐', desc:'Звёздочка рядом с ником', price:100, badge:'⭐', cat:'badge'},
-  {id:'badge_fire', title:'Значок 🔥', desc:'Огонёк', price:120, badge:'🔥', cat:'badge'},
-  {id:'badge_crown', title:'Значок 👑', desc:'Корона', price:250, badge:'👑', cat:'badge'},
-  {id:'badge_heart', title:'Значок 💖', desc:'Сердечко', price:100, badge:'💖', cat:'badge'},
-  {id:'badge_rocket', title:'Значок 🚀', desc:'Ракета', price:180, badge:'🚀', cat:'badge'},
-  {id:'badge_diamond', title:'Значок 💎', desc:'Алмаз', price:300, badge:'💎', cat:'badge'},
-  {id:'badge_skull', title:'Значок 💀', desc:'Череп', price:220, badge:'💀', cat:'badge'},
-  {id:'badge_ghost', title:'Значок 👻', desc:'Призрак', price:150, badge:'👻', cat:'badge'},
-  {id:'av_cat', title:'Аватар 🐱', desc:'Котик', price:90, avatar:'🐱', cat:'avatar'},
-  {id:'av_dog', title:'Аватар 🐶', desc:'Собачка', price:90, avatar:'🐶', cat:'avatar'},
-  {id:'av_fox', title:'Аватар 🦊', desc:'Лисичка', price:110, avatar:'🦊', cat:'avatar'},
-  {id:'av_lion', title:'Аватар 🦁', desc:'Лев', price:140, avatar:'🦁', cat:'avatar'},
-  {id:'av_dragon', title:'Аватар 🐲', desc:'Дракон', price:200, avatar:'🐲', cat:'avatar'},
-  {id:'av_alien', title:'Аватар 👽', desc:'Инопланетянин', price:170, avatar:'👽', cat:'avatar'},
-  {id:'av_robot', title:'Аватар 🤖', desc:'Робот', price:170, avatar:'🤖', cat:'avatar'},
-  {id:'av_ninja', title:'Аватар 🥷', desc:'Ниндзя', price:230, avatar:'🥷', cat:'avatar'},
-  {id:'theme_gold', title:'Золотая тема', desc:'Золотые акценты', price:400, theme:'gold', cat:'theme'},
-  {id:'theme_neon', title:'Неоновая тема', desc:'Неон', price:400, theme:'neon', cat:'theme'}
-];
-
-/* =========== HELPERS =========== */
-function $(id){ return document.getElementById(id); }
+/* ============ HELPERS ============ */
+var $ = function(id){ return document.getElementById(id); };
 function show(id){
   var all = document.querySelectorAll('.screen');
   for(var i=0;i<all.length;i++) all[i].classList.remove('active');
@@ -469,107 +363,118 @@ function isEmojiOnly(str){
   return !/[a-zA-Zа-яА-Я0-9]/.test(s);
 }
 
-/* =========== TABS =========== */
+/* ============ СОСТОЯНИЕ ============ */
+var ME = null;      // мой профиль
+var TOKEN = localStorage.getItem('wc_token') || null;
+var USERS = {};     // nick -> user
+var GROUPS = {};    // gid -> group
+var SHOP = [];
+var currentChat = null;   // nick
+var currentGroup = null;  // gid
+var pollTimer = null;
+
+/* ============ API ============ */
+function api(path, opts){
+  opts = opts || {};
+  var headers = { 'Content-Type': 'application/json' };
+  if(TOKEN) headers['x-token'] = TOKEN;
+  return fetch('/api' + path, {
+    method: opts.method || 'GET',
+    headers: headers,
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  }).then(function(r){ return r.json(); });
+}
+
+/* ============ АВТОРИЗАЦИЯ ============ */
 var mode = 'login';
 $('tab-login').addEventListener('click', function(){
-  mode = 'login';
-  $('tab-login').classList.add('active');
-  $('tab-register').classList.remove('active');
-  $('btn-auth').textContent = 'Войти';
-  $('auth-err').textContent = '';
+  mode='login'; $('tab-login').classList.add('active'); $('tab-register').classList.remove('active');
+  $('btn-auth').textContent='Войти'; $('auth-err').textContent='';
 });
 $('tab-register').addEventListener('click', function(){
-  mode = 'register';
-  $('tab-register').classList.add('active');
-  $('tab-login').classList.remove('active');
-  $('btn-auth').textContent = 'Создать аккаунт';
-  $('auth-err').textContent = '';
+  mode='register'; $('tab-register').classList.add('active'); $('tab-login').classList.remove('active');
+  $('btn-auth').textContent='Создать аккаунт'; $('auth-err').textContent='';
 });
 
-/* =========== AUTH =========== */
 $('btn-auth').addEventListener('click', function(){
   var nick = $('in-nick').value.trim();
   var pass = $('in-pass').value;
   var err = $('auth-err');
   err.textContent = '';
   if(!nick || !pass){ err.textContent='Заполни все поля'; return; }
-  if(nick.length < 3){ err.textContent='Ник минимум 3 символа'; return; }
-  if(pass.length < 3){ err.textContent='Пароль минимум 3 символа'; return; }
-
-  if(mode === 'register'){
-    if(DB.users[nick]){ err.textContent='Такой ник занят'; return; }
-    var newId = genId();
-    DB.users[nick] = {
-      nick: nick, id: newId, pass: pass, coins: 0,
-      isAdmin: nick === ADMIN_NICK,
-      color: nick === ADMIN_NICK ? '#ff2b2b' : null,
-      badge: null, avatar: null, theme: null,
-      banned: false, banReason: null,
-      purchases: [], contacts: []
-    };
-    DB.current = nick;
-    save();
+  var path = mode === 'register' ? '/register' : '/login';
+  api(path, { method:'POST', body:{ nick:nick, pass:pass } }).then(function(res){
+    if(res.error){ err.textContent = res.error; return; }
+    TOKEN = res.token;
+    ME = res.user;
+    localStorage.setItem('wc_token', TOKEN);
+    $('in-pass').value='';
     enterApp();
-    toast('Твой ID: ' + newId + ' (сохрани!)');
-  } else {
-    var u = DB.users[nick];
-    if(!u || u.pass !== pass){ err.textContent='Неверный ник или пароль'; return; }
-    if(u.banned){
-      err.textContent = '🚫 Ты забанен' + (u.banReason ? ': ' + u.banReason : '');
-      return;
-    }
-    DB.current = nick;
-    save();
-    enterApp();
-  }
+  }).catch(function(){ err.textContent='Ошибка сети'; });
 });
 
 function enterApp(){
-  var u = DB.users[DB.current];
-  if(u.banned){
-    DB.current = null; save();
-    $('auth-err').textContent = '🚫 Ты забанен' + (u.banReason ? ': ' + u.banReason : '');
-    show('scr-auth');
-    return;
-  }
-  $('in-pass').value='';
-  $('auth-err').textContent='';
   applyTheme();
+  loadUsers();
+  loadGroups();
+  loadShop();
   show('scr-list');
   renderChats();
+  startPolling();
 }
 
+function startPolling(){
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(function(){
+    if(currentChat || currentGroup){
+      refreshMsgs();
+    }
+    loadUsers();
+  }, 2000);
+}
+
+/* ============ ТЕМА ============ */
 function applyTheme(){
-  var u = DB.users[DB.current];
   document.body.classList.remove('theme-gold','theme-neon');
-  if(u && u.theme === 'gold') document.body.classList.add('theme-gold');
-  if(u && u.theme === 'neon') document.body.classList.add('theme-neon');
+  if(ME && ME.theme === 'gold') document.body.classList.add('theme-gold');
+  if(ME && ME.theme === 'neon') document.body.classList.add('theme-neon');
 }
 
-/* =========== ЧАТЫ =========== */
-function chatKey(a,b){ var arr=[a,b]; arr.sort(); return 'p:' + arr.join('|'); }
-function groupKey(gid){ return 'g:' + gid; }
+/* ============ ЗАГРУЗКА ============ */
+function loadUsers(){
+  api('/users').then(function(list){
+    if(!Array.isArray(list)) return;
+    USERS = {};
+    list.forEach(function(u){ USERS[u.nick] = u; });
+    if(ME && USERS[ME.nick]) ME = USERS[ME.nick];
+    renderChats();
+  });
+}
+function loadGroups(){
+  api('/groups').then(function(obj){
+    if(obj && typeof obj === 'object') GROUPS = obj;
+  });
+}
+function loadShop(){
+  api('/shop').then(function(list){
+    if(Array.isArray(list)) SHOP = list;
+  });
+}
 
+/* ============ СПИСОК ЧАТОВ ============ */
 function renderChats(){
+  if(!ME) return;
   var list = $('chat-list');
-  var me = DB.users[DB.current];
   var items = [];
 
-  (me.contacts || []).forEach(function(nick){
-    if(!DB.users[nick]) return;
-    var key = chatKey(DB.current, nick);
-    var msgs = DB.chats[key] || [];
-    items.push({type:'private', nick: nick, msgs: msgs, lastT: msgs.length ? msgs[msgs.length-1].t : 0});
+  (ME.contacts || []).forEach(function(nick){
+    if(!USERS[nick]) return;
+    items.push({ type:'private', nick: nick });
   });
 
-  Object.keys(DB.groups).forEach(function(gid){
-    var g = DB.groups[gid];
-    if(g.members.indexOf(DB.current) === -1) return;
-    var msgs = DB.chats[groupKey(gid)] || [];
-    items.push({type:'group', gid: gid, group: g, msgs: msgs, lastT: msgs.length ? msgs[msgs.length-1].t : 0});
+  Object.keys(GROUPS).forEach(function(gid){
+    items.push({ type:'group', gid: gid });
   });
-
-  items.sort(function(a,b){ return b.lastT - a.lastT; });
 
   if(items.length === 0){
     list.innerHTML = '<div class="empty">Пока пусто.<br><br>🔍 — найди друга по ID<br>👥 — создай группу</div>';
@@ -579,200 +484,150 @@ function renderChats(){
   list.innerHTML = '';
   items.forEach(function(it){
     if(it.type === 'private'){
-      var u = DB.users[it.nick];
-      var last = it.msgs.length ? it.msgs[it.msgs.length-1].text : 'Нет сообщений';
+      var u = USERS[it.nick];
       var el = document.createElement('div');
       el.className = 'chat-item';
       var avInner = u.avatar ? u.avatar : it.nick[0].toUpperCase();
-      var avStyle = u.color ? 'background:'+u.color : '';
       el.innerHTML =
-        '<div class="av '+(u.isAdmin?'admin':'')+(u.banned?' banned':'')+'" style="'+avStyle+'">'+esc(avInner)+'</div>'+
-        '<div class="chat-meta">'+
-          '<div class="name" style="'+(u.color?'color:'+u.color:'')+'">'+
-            esc(it.nick)+
-            (u.isAdmin?' <span class="badge-admin">админ</span>':'')+
-            (u.banned?' <span class="badge-ban">бан</span>':'')+
-            (u.badge?' <span>'+u.badge+'</span>':'')+
-          '</div>'+
-          '<div class="last">'+esc(last)+'</div>'+
-        '</div>';
+        '<div class="av '+(u.isAdmin?'admin':'')+(u.banned?' banned':'')+'" style="'+(u.color?'background:'+u.color:'')+'">'+esc(avInner)+'</div>'+
+        '<div class="chat-meta"><div class="name" style="'+(u.color?'color:'+u.color:'')+'">'+esc(it.nick)+(u.isAdmin?' <span class="badge-admin">админ</span>':'')+(u.banned?' <span class="badge-ban">бан</span>':'')+(u.badge?' <span>'+u.badge+'</span>':'')+'</div><div class="last">Личный чат</div></div>';
       el.addEventListener('click', (function(n){return function(){openPrivate(n);};})(it.nick));
       list.appendChild(el);
     } else {
-      var g = it.group;
-      var lastMsg = it.msgs.length ? it.msgs[it.msgs.length-1] : null;
-      var lastG = lastMsg ? (DB.users[lastMsg.from] ? lastMsg.from + ': ' : '') + lastMsg.text : 'Нет сообщений';
+      var g = GROUPS[it.gid];
       var el2 = document.createElement('div');
       el2.className = 'chat-item';
       el2.innerHTML =
         '<div class="av group">'+esc(g.name[0].toUpperCase())+'</div>'+
-        '<div class="chat-meta">'+
-          '<div class="name">'+esc(g.name)+' <span class="badge-group">группа</span></div>'+
-          '<div class="last">'+esc(lastG)+'</div>'+
-        '</div>';
+        '<div class="chat-meta"><div class="name">'+esc(g.name)+' <span class="badge-group">группа</span></div><div class="last">'+g.members.length+' участник(ов)</div></div>';
       el2.addEventListener('click', (function(gid){return function(){openGroup(gid);};})(it.gid));
       list.appendChild(el2);
     }
   });
 }
 
-/* =========== ЛИЧНЫЙ/ГРУППОВОЙ ЧАТ =========== */
-var currentChat = null;
-var currentGroup = null;
-
-function addContact(nick){
-  var me = DB.users[DB.current];
-  if(!me.contacts) me.contacts = [];
-  if(me.contacts.indexOf(nick) === -1) me.contacts.push(nick);
-  save();
-}
-
+/* ============ ОТКРЫТИЕ ЧАТА ============ */
 function openPrivate(nick){
-  currentChat = {type:'private', nick: nick};
+  currentChat = nick;
   currentGroup = null;
-  var u = DB.users[nick];
+  var u = USERS[nick] || { nick:nick, id:'', isAdmin:false };
   var avInner = u.avatar ? u.avatar : nick[0].toUpperCase();
   $('cv-name').innerHTML = '<span style="'+(u.color?'color:'+u.color:'')+'">'+esc(nick)+'</span>'+(u.isAdmin?' <span class="badge-admin">админ</span>':'')+(u.banned?' <span class="badge-ban">бан</span>':'')+(u.badge?' '+u.badge:'');
-  $('cv-sub').textContent = 'ID: ' + u.id;
+  $('cv-sub').textContent = 'ID: ' + (u.id || '—');
   var av = $('cv-av');
   av.textContent = avInner;
   av.className = 'av ' + (u.isAdmin?'admin':'') + (u.banned?' banned':'');
   av.style.background = u.color || '';
-  renderMsgs();
   show('scr-chat');
-  setTimeout(function(){var m=$('msgs'); m.scrollTop=m.scrollHeight;}, 50);
+  refreshMsgs();
 }
-
 function openGroup(gid){
   currentGroup = gid;
   currentChat = null;
-  var g = DB.groups[gid];
+  var g = GROUPS[gid];
   $('cv-name').innerHTML = esc(g.name) + ' <span class="badge-group">группа</span>';
   $('cv-sub').textContent = g.members.length + ' участник(ов)';
   var av = $('cv-av');
   av.textContent = g.name[0].toUpperCase();
   av.className = 'av group';
-  av.style.background = '';
-  renderMsgs();
   show('scr-chat');
-  setTimeout(function(){var m=$('msgs'); m.scrollTop=m.scrollHeight;}, 50);
+  refreshMsgs();
 }
 
-function currentKey(){
-  if(currentChat) return chatKey(DB.current, currentChat.nick);
-  if(currentGroup) return groupKey(currentGroup);
-  return null;
+/* ============ СООБЩЕНИЯ ============ */
+var lastMsgsJson = '';
+function refreshMsgs(){
+  if(!currentChat && !currentGroup) return;
+  var q = currentGroup ? ('?gid=' + encodeURIComponent(currentGroup)) : ('?withNick=' + encodeURIComponent(currentChat));
+  api('/messages' + q).then(function(res){
+    if(!res || !res.msgs) return;
+    var json = JSON.stringify(res.msgs);
+    if(json === lastMsgsJson) return;
+    lastMsgsJson = json;
+    renderMsgs(res.msgs);
+  });
 }
 
-/* =========== РЕНДЕР СООБЩЕНИЙ =========== */
-function renderMsgs(){
-  var key = currentKey();
-  if(!key) return;
-  var msgs = DB.chats[key] || [];
+function renderMsgs(msgs){
   var box = $('msgs');
   if(!msgs.length){
     box.innerHTML = '<div class="empty">Начни общение первым 👋</div>';
     return;
   }
   var isGroup = !!currentGroup;
-  var me = DB.users[DB.current];
-  var canDelete = !!me.isAdmin;
-
+  var canDelete = ME && ME.isAdmin;
   box.innerHTML = '';
   msgs.forEach(function(m, idx){
     var d = document.createElement('div');
-    d.className = 'bubble ' + (m.from === DB.current ? 'me':'you');
+    d.className = 'bubble ' + (m.from === ME.nick ? 'me':'you');
     if(isEmojiOnly(m.text)) d.classList.add('emoji-only');
-
     var time = new Date(m.t).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
     var authorHtml = '';
-    if(isGroup && m.from !== DB.current){
-      var au = DB.users[m.from];
+    if(isGroup && m.from !== ME.nick){
+      var au = USERS[m.from];
       var ac = au && au.color ? au.color : 'var(--accent)';
       authorHtml = '<div class="author" style="color:'+ac+'">'+esc(m.from)+'</div>';
     }
     d.innerHTML = authorHtml + esc(m.text) + '<div class="time">'+time+'</div>';
-
     if(canDelete){
       d.classList.add('can-delete');
       var delBtn = document.createElement('button');
       delBtn.className = 'del-btn';
       delBtn.type = 'button';
       delBtn.textContent = '✕';
-      delBtn.title = 'Удалить';
       delBtn.addEventListener('click', (function(i){return function(e){
         e.stopPropagation();
-        askDeleteMsg(i);
+        pendingDeleteIdx = i;
+        $('msg-text').textContent = msgs[i].from + ': ' + msgs[i].text;
+        $('modal-msg').classList.add('active');
       };})(idx));
       d.appendChild(delBtn);
     }
-
-    if(canDelete){
-      var longTimer = null;
-      d.addEventListener('touchstart', function(e){
-        longTimer = setTimeout(function(){ askDeleteMsg(idx); }, 600);
-      }, {passive:true});
-      d.addEventListener('touchend', function(){ if(longTimer) clearTimeout(longTimer); });
-      d.addEventListener('touchmove', function(){ if(longTimer) clearTimeout(longTimer); });
-    }
-
     box.appendChild(d);
   });
   box.scrollTop = box.scrollHeight;
 }
 
-/* =========== УДАЛЕНИЕ СООБЩЕНИЯ =========== */
-var pendingDeleteIdx = null;
-function askDeleteMsg(idx){
-  var me = DB.users[DB.current];
-  if(!me.isAdmin){ toast('❌ Только админ может удалять'); return; }
-  var key = currentKey();
-  var msgs = DB.chats[key] || [];
-  var m = msgs[idx];
-  if(!m) return;
-  pendingDeleteIdx = idx;
-  $('msg-title').textContent = 'Удалить сообщение?';
-  $('msg-text').textContent = m.from + ': ' + m.text;
-  $('modal-msg').classList.add('active');
+/* ============ ОТПРАВКА ============ */
+function sendMsg(){
+  var txt = $('in-msg').value.trim();
+  if(!txt) return;
+  var body = { text: txt };
+  if(currentGroup) body.gid = currentGroup;
+  else if(currentChat) body.to = currentChat;
+  else return;
+  api('/send', { method:'POST', body: body }).then(function(res){
+    if(res.error){ toast(res.error); return; }
+    $('in-msg').value='';
+    refreshMsgs();
+  });
 }
+$('btn-send').addEventListener('click', sendMsg);
+$('in-msg').addEventListener('keydown', function(e){ if(e.key==='Enter') sendMsg(); });
+$('btn-back').addEventListener('click', function(){ show('scr-list'); currentChat=null; currentGroup=null; renderChats(); });
+
+/* ============ УДАЛЕНИЕ СООБЩЕНИЯ ============ */
+var pendingDeleteIdx = null;
 $('btn-msg-cancel').addEventListener('click', function(){
   pendingDeleteIdx = null;
   $('modal-msg').classList.remove('active');
 });
 $('btn-msg-delete').addEventListener('click', function(){
-  var me = DB.users[DB.current];
-  if(!me.isAdmin){ toast('❌ Только админ'); return; }
-  var key = currentKey();
-  var msgs = DB.chats[key] || [];
-  if(pendingDeleteIdx === null || !msgs[pendingDeleteIdx]) return;
-  msgs.splice(pendingDeleteIdx, 1);
-  pendingDeleteIdx = null;
-  save();
-  $('modal-msg').classList.remove('active');
-  renderMsgs();
-  renderChats();
-  toast('🗑️ Сообщение удалено');
+  if(pendingDeleteIdx === null) return;
+  var body = { idx: pendingDeleteIdx };
+  if(currentGroup) body.gid = currentGroup;
+  else body.withNick = currentChat;
+  api('/msg/delete', { method:'POST', body: body }).then(function(res){
+    if(res.error){ toast(res.error); return; }
+    pendingDeleteIdx = null;
+    $('modal-msg').classList.remove('active');
+    lastMsgsJson = '';
+    refreshMsgs();
+    toast('🗑️ Удалено');
+  });
 });
 
-/* =========== ОТПРАВКА =========== */
-function sendMsg(){
-  var me = DB.users[DB.current];
-  if(me.banned){ toast('🚫 Ты забанен'); return; }
-  var txt = $('in-msg').value.trim();
-  if(!txt) return;
-  var key = currentKey();
-  if(!key) return;
-  if(!DB.chats[key]) DB.chats[key] = [];
-  DB.chats[key].push({from:DB.current, text:txt, t:Date.now()});
-  save();
-  $('in-msg').value='';
-  renderMsgs();
-}
-$('btn-send').addEventListener('click', sendMsg);
-$('in-msg').addEventListener('keydown', function(e){ if(e.key==='Enter') sendMsg(); });
-$('btn-back').addEventListener('click', function(){ show('scr-list'); renderChats(); });
-
-/* =========== ЭМОДЗИ =========== */
+/* ============ ЭМОДЗИ ============ */
 var EMOJIS = ['😀','😁','😂','🤣','😊','😍','🥰','😎','🤔','😴','😢','😭','😡','🥳','🤯','😱','🤗','😇','🤩','🙃','😉','😋','🤤','🥶','🥵','🤒','🤠','🤡','👻','💀','👽','🤖','🎃','😺','😸','😻','🙀','😿','😾',
 '👍','👎','👏','🙏','💪','🤝','✌️','🤞','🤟','👋','🖐️','✋','👌','🤙','💅','🫶','❤️','🧡','💛','💚','💙','💜','🖤','🤍','💔','❤️‍🔥','💕','💞','💓','💗','💖','💘','💝',
 '🔥','⭐','✨','💫','🌟','⚡','💥','🎉','🎊','🎁','🎈','🎂','🍕','🍔','🍟','🌮','🍣','🍜','🍩','🍪','🍫','🍬','🍭','🧁','🍰','☕','🍵','🍺','🍻','🥂','🍾',
@@ -786,79 +641,57 @@ $('btn-emoji').addEventListener('click', function(){
       var b = document.createElement('button');
       b.type = 'button';
       b.textContent = e;
-      b.addEventListener('click', function(){
-        var inp = $('in-msg');
-        inp.value += e;
-        inp.focus();
-      });
+      b.addEventListener('click', function(){ $('in-msg').value += e; $('in-msg').focus(); });
       box.appendChild(b);
     });
   }
   $('modal-emoji').classList.add('active');
 });
-$('btn-emoji-close').addEventListener('click', function(){
-  $('modal-emoji').classList.remove('active');
-});
+$('btn-emoji-close').addEventListener('click', function(){ $('modal-emoji').classList.remove('active'); });
 
-/* =========== МОДАЛКИ =========== */
-function openModal(id){ $(id).classList.add('active'); }
-function closeModal(id){ $(id).classList.remove('active'); }
-
+/* ============ ПОИСК ============ */
 $('btn-search').addEventListener('click', function(){
-  $('in-search-id').value = '';
-  $('search-err').textContent = '';
-  openModal('modal-search');
-  setTimeout(function(){ $('in-search-id').focus(); }, 100);
+  $('in-search-id').value=''; $('search-err').textContent='';
+  $('modal-search').classList.add('active');
 });
-$('btn-search-cancel').addEventListener('click', function(){ closeModal('modal-search'); });
-$('btn-search-go').addEventListener('click', doSearch);
-$('in-search-id').addEventListener('keydown', function(e){ if(e.key==='Enter') doSearch(); });
-
-function doSearch(){
-  var err = $('search-err');
-  err.textContent = '';
+$('btn-search-cancel').addEventListener('click', function(){ $('modal-search').classList.remove('active'); });
+$('btn-search-go').addEventListener('click', function(){
   var id = $('in-search-id').value.trim();
-  if(!/^\d{6}$/.test(id)){ err.textContent = 'ID должен быть из 6 цифр'; return; }
-  var me = DB.users[DB.current];
-  if(me.id === id){ err.textContent = 'Это твой собственный ID'; return; }
-  var u = findUserById(id);
-  if(!u){ err.textContent = 'Пользователь с таким ID не найден'; return; }
-  addContact(u.nick);
-  closeModal('modal-search');
-  toast('Чат с ' + u.nick + ' добавлен');
-  openPrivate(u.nick);
-}
+  if(!/^\d{6}$/.test(id)){ $('search-err').textContent='ID из 6 цифр'; return; }
+  api('/find', { method:'POST', body:{ id: id } }).then(function(res){
+    if(res.error){ $('search-err').textContent = res.error; return; }
+    $('modal-search').classList.remove('active');
+    toast('Чат с ' + res.user.nick + ' добавлен');
+    loadUsers().then(function(){ openPrivate(res.user.nick); });
+  });
+});
 
-/* =========== ГРУППА =========== */
+/* ============ ГРУППА ============ */
 var groupSelected = {};
-
 $('btn-newgroup').addEventListener('click', function(){
   groupSelected = {};
-  $('in-group-name').value = '';
-  $('group-err').textContent = '';
+  $('in-group-name').value=''; $('group-err').textContent='';
   renderGroupUsers();
-  openModal('modal-group');
+  $('modal-group').classList.add('active');
 });
-$('btn-group-cancel').addEventListener('click', function(){ closeModal('modal-group'); });
+$('btn-group-cancel').addEventListener('click', function(){ $('modal-group').classList.remove('active'); });
 
 function renderGroupUsers(){
   var box = $('group-users');
-  var others = Object.keys(DB.users).filter(function(n){return n !== DB.current;});
+  var others = Object.keys(USERS).filter(function(n){return n !== ME.nick;});
   if(others.length === 0){
-    box.innerHTML = '<div class="empty" style="padding:20px">Нет других пользователей</div>';
+    box.innerHTML = '<div class="empty" style="padding:20px">Нет других юзеров</div>';
     return;
   }
   box.innerHTML = '';
   others.forEach(function(nick){
-    var u = DB.users[nick];
+    var u = USERS[nick];
     var el = document.createElement('div');
     el.className = 'user-pick' + (groupSelected[nick]?' selected':'');
     var avInner = u.avatar ? u.avatar : nick[0].toUpperCase();
-    el.innerHTML =
-      '<div class="av '+(u.isAdmin?'admin':'')+(u.banned?' banned':'')+'" style="'+(u.color?'background:'+u.color:'')+'">'+esc(avInner)+'</div>'+
-      '<div class="n" style="'+(u.color?'color:'+u.color:'')+'">'+esc(nick)+(u.banned?' <span class="badge-ban">бан</span>':'')+'</div>'+
-      '<div class="c">ID: '+u.id+'</div>'+
-      (groupSelected[nick] ? '<div class="check">✓</div>' : '');
+    el.innerHTML = '<div class="av '+(u.isAdmin?'admin':'')+(u.banned?' banned':'')+'" style="'+(u.color?'background:'+u.color:'')+'">'+esc(avInner)+'</div>'+
+      '<div class="n" style="'+(u.color?'color:'+u.color:'')+'">'+esc(nick)+'</div>'+
+      (groupSelected[nick]?'<div class="check">✓</div>':'');
     el.addEventListener('click', function(){
       if(groupSelected[nick]) delete groupSelected[nick];
       else groupSelected[nick] = true;
@@ -867,74 +700,60 @@ function renderGroupUsers(){
     box.appendChild(el);
   });
 }
-
 $('btn-group-create').addEventListener('click', function(){
-  var err = $('group-err');
-  err.textContent = '';
   var name = $('in-group-name').value.trim();
-  if(name.length < 2){ err.textContent = 'Название минимум 2 символа'; return; }
+  if(name.length < 2){ $('group-err').textContent='Название коротко'; return; }
   var members = Object.keys(groupSelected);
-  if(members.length === 0){ err.textContent = 'Выбери хотя бы одного участника'; return; }
-  members.push(DB.current);
-
-  var gid = 'g' + Date.now();
-  DB.groups[gid] = {
-    id: gid, name: name, members: members,
-    creator: DB.current, created: Date.now()
-  };
-  save();
-  closeModal('modal-group');
-  toast('Группа «' + name + '» создана');
-  openGroup(gid);
+  if(members.length === 0){ $('group-err').textContent='Выбери участников'; return; }
+  api('/groups/create', { method:'POST', body:{ name:name, members:members } }).then(function(res){
+    if(res.error){ $('group-err').textContent = res.error; return; }
+    $('modal-group').classList.remove('active');
+    loadGroups().then(function(){
+      toast('Группа создана');
+      openGroup(res.gid);
+    });
+  });
 });
 
-/* =========== НАСТРОЙКИ =========== */
+/* ============ НАСТРОЙКИ ============ */
 $('btn-settings').addEventListener('click', function(){ renderSettings(); show('scr-settings'); });
 $('btn-back-s').addEventListener('click', function(){ show('scr-list'); renderChats(); });
 
 function renderSettings(){
-  var u = DB.users[DB.current];
-  $('st-nick').innerHTML = '<span style="'+(u.color?'color:'+u.color:'')+'">'+esc(u.nick)+'</span>'+(u.badge?' '+u.badge:'');
-  $('st-id').textContent = u.id;
-  $('st-status').textContent = u.isAdmin ? 'админ' : 'обычный';
-  $('st-status').style.color = u.isAdmin ? 'var(--admin)' : '';
-  $('st-bal').textContent = u.coins;
-  $('st-color').textContent = u.color || 'по умолчанию';
-  $('st-color').style.color = u.color || '';
-  $('st-badge').textContent = u.badge || 'нет';
-  $('st-avatar').textContent = u.avatar || 'по умолчанию';
+  if(!ME) return;
+  $('st-nick').innerHTML = '<span style="'+(ME.color?'color:'+ME.color:'')+'">'+esc(ME.nick)+'</span>'+(ME.badge?' '+ME.badge:'');
+  $('st-id').textContent = ME.id;
+  $('st-status').textContent = ME.isAdmin ? 'админ' : 'обычный';
+  $('st-status').style.color = ME.isAdmin ? 'var(--admin)' : '';
+  $('st-bal').textContent = ME.coins;
+  $('st-color').textContent = ME.color || 'по умолчанию';
+  $('st-color').style.color = ME.color || '';
+  $('st-badge').textContent = ME.badge || 'нет';
+  $('st-avatar').textContent = ME.avatar || 'по умолчанию';
   $('sw-theme').classList.toggle('on', document.body.classList.contains('dark'));
 
   var pc = $('my-purchases');
   pc.innerHTML = '';
-  if(!u.purchases || u.purchases.length === 0){
+  if(!ME.purchases || ME.purchases.length === 0){
     pc.innerHTML = '<div style="font-size:13px;color:var(--text2)">Пока ничего не куплено</div>';
     return;
   }
-  u.purchases.forEach(function(pid){
-    var item = null;
-    for(var i=0;i<SHOP.length;i++){ if(SHOP[i].id === pid){ item = SHOP[i]; break; } }
+  ME.purchases.forEach(function(pid){
+    var item = SHOP.find(function(s){return s.id===pid;});
     if(!item) return;
     var row = document.createElement('div');
     row.className = 'row';
     row.innerHTML = '<span>'+esc(item.title)+'</span><button class="btn ghost small" type="button">Снять</button>';
-    row.querySelector('button').addEventListener('click', function(){ removeEffect(item); });
+    row.querySelector('button').addEventListener('click', function(){
+      api('/shop/remove', { method:'POST', body:{ id: item.id } }).then(function(res){
+        if(res.error){ toast(res.error); return; }
+        ME = res.user;
+        applyTheme(); renderSettings();
+        toast('Эффект снят');
+      });
+    });
     pc.appendChild(row);
   });
-}
-
-function removeEffect(item){
-  var u = DB.users[DB.current];
-  var idx = u.purchases.indexOf(item.id);
-  if(idx !== -1) u.purchases.splice(idx, 1);
-  if(item.color && u.color === item.color) u.color = u.isAdmin ? '#ff2b2b' : null;
-  if(item.badge && u.badge === item.badge) u.badge = null;
-  if(item.avatar && u.avatar === item.avatar) u.avatar = null;
-  if(item.theme && u.theme === item.theme) u.theme = null;
-  save();
-  applyTheme();
-  renderSettings();
-  toast('Эффект снят');
 }
 
 $('sw-theme').addEventListener('click', function(){
@@ -942,75 +761,79 @@ $('sw-theme').addEventListener('click', function(){
   localStorage.setItem('wc_theme', document.body.classList.contains('dark')?'dark':'light');
   $('sw-theme').classList.toggle('on');
 });
-
 $('btn-logout').addEventListener('click', function(){
-  DB.current = null; save();
+  TOKEN = null; ME = null;
+  localStorage.removeItem('wc_token');
+  if(pollTimer) clearInterval(pollTimer);
   $('in-nick').value=''; $('in-pass').value='';
-  $('auth-err').textContent='';
   show('scr-auth');
 });
 
-/* =========== DEV =========== */
+/* ============ DEV / ADMIN ============ */
 $('btn-devc').addEventListener('click', function(){
   var code = $('in-devc').value;
-  if(code !== DEV_CODE){ toast('❌ Неверный код'); return; }
-  $('in-devc').value='';
-  renderAdmin();
-  show('scr-admin');
+  api('/dev/check', { method:'POST', body:{ code:code } }).then(function(res){
+    if(res.error){ toast('❌ '+res.error); return; }
+    $('in-devc').value='';
+    renderAdmin();
+    show('scr-admin');
+  });
 });
 $('btn-back-a').addEventListener('click', function(){ show('scr-settings'); renderSettings(); });
 
 function renderAdmin(){
-  var me = DB.users[DB.current];
   var usersBox = $('admin-users');
   usersBox.innerHTML = '';
-  Object.keys(DB.users).forEach(function(nick){
-    var u = DB.users[nick];
+  Object.keys(USERS).forEach(function(nick){
+    var u = USERS[nick];
     var el = document.createElement('div');
     el.className = 'user-pick';
-    var avInner = u.avatar ? u.avatar : nick[0].toUpperCase();
-    el.innerHTML =
-      '<div class="av '+(u.isAdmin?'admin':'')+(u.banned?' banned':'')+'" style="'+(u.color?'background:'+u.color:'')+'">'+esc(avInner)+'</div>'+
-      '<div class="n" style="'+(u.color?'color:'+u.color:'')+'">'+esc(nick)+(u.isAdmin?' <span class="badge-admin">админ</span>':'')+(u.banned?' <span class="badge-ban">бан</span>':'')+'<br><span style="font-size:11px;color:var(--text2)">ID: '+u.id+'</span></div>'+
-      '<div class="c"><span class="coin">W</span> '+u.coins+'</div>'+
+    el.innerHTML = '<div class="av '+(u.isAdmin?'admin':'')+'" style="'+(u.color?'background:'+u.color:'')+'">'+nick[0].toUpperCase()+'</div>'+
+      '<div class="n">'+esc(nick)+'<br><span style="font-size:11px;color:var(--text2)">ID: '+u.id+' · W '+u.coins+'</span></div>'+
       '<button class="btn small" type="button">+10</button>';
-    el.querySelector('button').addEventListener('click', function(e){
-      e.stopPropagation();
-      DB.users[nick].coins += 10;
-      save(); renderAdmin(); toast('+10 W для '+nick);
+    el.querySelector('button').addEventListener('click', function(){
+      api('/admin/coins', { method:'POST', body:{ nick:nick, amount:10 } }).then(function(res){
+        if(res.error){ toast(res.error); return; }
+        toast('+10 W для '+nick);
+        loadUsers().then(renderAdmin);
+      });
     });
     usersBox.appendChild(el);
   });
 
-  $('sw-admin-tag').classList.toggle('on', !!me.isAdmin);
-  $('sw-admin-red').classList.toggle('on', me.color === '#ff2b2b');
+  $('sw-admin-tag').classList.toggle('on', !!(ME && ME.isAdmin));
+  $('sw-admin-red').classList.toggle('on', !!(ME && ME.color==='#ff2b2b'));
 
   var allBox = $('admin-all');
   allBox.innerHTML = '';
-  Object.keys(DB.users).forEach(function(nick){
-    var u = DB.users[nick];
+  Object.keys(USERS).forEach(function(nick){
+    var u = USERS[nick];
     var el = document.createElement('div');
     el.className = 'row';
-    var banLabel = u.banned ? '✅ Разбанить' : '🚫 Забанить';
-    el.innerHTML =
-      '<div style="flex:1;min-width:0">'+
-        '<div style="'+(u.color?'color:'+u.color:'')+'"><b>'+esc(nick)+'</b>'+(u.isAdmin?' <span class="badge-admin">админ</span>':'')+(u.banned?' <span class="badge-ban">бан</span>':'')+'</div>'+
-        '<div style="font-size:11px;color:var(--text2);margin-top:2px">ID: '+u.id+(u.banReason?' · '+esc(u.banReason):'')+'</div>'+
-      '</div>'+
+    el.innerHTML = '<div style="flex:1"><b style="'+(u.color?'color:'+u.color:'')+'">'+esc(nick)+'</b>'+(u.isAdmin?' <span class="badge-admin">админ</span>':'')+(u.banned?' <span class="badge-ban">бан</span>':'')+
+      '<div style="font-size:11px;color:var(--text2)">ID '+u.id+(u.banReason?' · '+esc(u.banReason):'')+'</div></div>'+
       '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">'+
-        '<button class="btn ghost small" data-a type="button">'+(u.isAdmin?'− админ':'+ админ')+'</button>'+
-        '<button class="btn ghost small" data-r type="button">'+(u.color==='#ff2b2b'?'− красн.':'+ красн.')+'</button>'+
-        '<button class="btn '+(u.banned?'ghost':'danger')+' small" data-b type="button">'+banLabel+'</button>'+
-      '</div>';
+      '<button class="btn ghost small" data-a>админ</button>'+
+      '<button class="btn ghost small" data-b>'+(u.banned?'разбан':'бан')+'</button></div>';
     var btns = el.querySelectorAll('button');
-    btns[0].addEventListener('click', function(){ u.isAdmin = !u.isAdmin; save(); renderAdmin(); });
-    btns[1].addEventListener('click', function(){ u.color = (u.color === '#ff2b2b') ? null : '#ff2b2b'; save(); renderAdmin(); });
-    btns[2].addEventListener('click', function(){
+    btns[0].addEventListener('click', function(){
+      api('/admin/set-admin', { method:'POST', body:{ nick:nick, isAdmin: !u.isAdmin } }).then(function(){ loadUsers().then(renderAdmin); });
+    });
+    btns[1].addEventListener('click', function(){
       if(u.banned){
-        u.banned = false; u.banReason = null;
-        save(); renderAdmin(); toast('✅ '+nick+' разбанен');
+        api('/admin/ban', { method:'POST', body:{ nick:nick, banned:false } }).then(function(){ loadUsers().then(renderAdmin); toast('Разбанен'); });
       } else {
-        openBanModal(nick);
+        $('ban-title').textContent = 'Забанить '+nick+'?';
+        $('in-ban-reason').value='';
+        $('modal-ban').classList.add('active');
+        $('btn-ban-confirm').onclick = function(){
+          var reason = $('in-ban-reason').value.trim();
+          api('/admin/ban', { method:'POST', body:{ nick:nick, banned:true, reason:reason } }).then(function(){
+            $('modal-ban').classList.remove('active');
+            loadUsers().then(renderAdmin);
+            toast('🚫 '+nick+' забанен');
+          });
+        };
       }
     });
     allBox.appendChild(el);
@@ -1018,147 +841,100 @@ function renderAdmin(){
 }
 
 $('sw-admin-tag').addEventListener('click', function(){
-  var me = DB.users[DB.current];
-  me.isAdmin = !me.isAdmin;
-  if(!me.isAdmin && me.color === '#ff2b2b') me.color = null;
-  save(); renderAdmin();
+  if(!ME) return;
+  api('/admin/set-admin', { method:'POST', body:{ nick: ME.nick, isAdmin: !ME.isAdmin } }).then(function(res){
+    if(res.error){ toast(res.error); return; }
+    ME = res.user;
+    loadUsers().then(renderAdmin);
+  });
 });
 $('sw-admin-red').addEventListener('click', function(){
-  var me = DB.users[DB.current];
-  me.color = (me.color === '#ff2b2b') ? null : '#ff2b2b';
-  save(); renderAdmin();
+  if(!ME) return;
+  var wantRed = ME.color !== '#ff2b2b';
+  api('/admin/set-admin', { method:'POST', body:{ nick: ME.nick, colorRed: wantRed } }).then(function(res){
+    if(res.error){ toast(res.error); return; }
+    ME = res.user;
+    loadUsers().then(renderAdmin);
+  });
 });
 $('btn-self-coins').addEventListener('click', function(){
   var v = parseInt($('in-self-coins').value) || 0;
-  DB.users[DB.current].coins += v;
-  save(); renderAdmin(); toast('+'+v+' W');
+  api('/admin/coins', { method:'POST', body:{ nick: ME.nick, amount: v } }).then(function(res){
+    if(res.error){ toast(res.error); return; }
+    ME = res.user;
+    toast('+'+v+' W');
+    loadUsers().then(renderAdmin);
+  });
 });
+$('btn-ban-cancel').addEventListener('click', function(){ $('modal-ban').classList.remove('active'); });
 
-/* =========== БАН =========== */
-var banTarget = null;
-function openBanModal(nick){
-  banTarget = nick;
-  $('ban-title').textContent = 'Забанить ' + nick + '?';
-  $('ban-desc').textContent = 'Пользователь не сможет войти. Все сообщения останутся.';
-  $('in-ban-reason').value = '';
-  $('modal-ban').classList.add('active');
-}
-$('btn-ban-cancel').addEventListener('click', function(){
-  banTarget = null;
-  $('modal-ban').classList.remove('active');
-});
-$('btn-ban-confirm').addEventListener('click', function(){
-  if(!banTarget) return;
-  var u = DB.users[banTarget];
-  if(!u) return;
-  u.banned = true;
-  u.banReason = $('in-ban-reason').value.trim() || null;
-  save();
-  $('modal-ban').classList.remove('active');
-  renderAdmin();
-  toast('🚫 ' + banTarget + ' забанен');
-  banTarget = null;
-});
-
-/* =========== WIPE =========== */
 $('btn-wipe').addEventListener('click', function(){
   if(!confirm('Точно стереть ВСЮ базу?')) return;
-  if(!confirm('Точно-точно? Всё исчезнет.')) return;
-  localStorage.clear();
-  location.reload();
+  api('/admin/wipe', { method:'POST' }).then(function(res){
+    if(res.error){ toast(res.error); return; }
+    toast('База очищена');
+    setTimeout(function(){ location.reload(); }, 1000);
+  });
 });
 
-/* =========== SHOP =========== */
+/* ============ SHOP ============ */
 $('btn-shop').addEventListener('click', function(){ renderShop(); show('scr-shop'); });
 $('btn-back-sh').addEventListener('click', function(){ show('scr-list'); renderChats(); });
 
 function renderShop(){
-  var me = DB.users[DB.current];
-  $('shop-bal').textContent = me.coins;
+  $('shop-bal').textContent = ME.coins;
   var box = $('shop-list');
   box.innerHTML = '';
   SHOP.forEach(function(item){
-    var owned = me.purchases.indexOf(item.id) !== -1;
+    var owned = (ME.purchases||[]).indexOf(item.id) !== -1;
     var el = document.createElement('div');
     el.className = 'shop-item';
     var prevContent = item.badge || item.avatar || (item.color ? 'A' : '★');
     var prevBg = item.color || (item.theme==='gold'?'#ffb800':item.theme==='neon'?'#a855f7':'#666');
-    el.innerHTML =
-      '<div class="prev" style="background:'+prevBg+'">'+prevContent+'</div>'+
-      '<div class="txt"><div class="ttl">'+item.title+'</div><div class="desc">'+item.desc+'</div></div>'+
-      (owned
-        ? '<span style="color:var(--accent);font-weight:700;font-size:13px">✓ куплено</span>'
-        : '<button class="btn small" type="button">'+item.price+' W</button>');
+    el.innerHTML = '<div class="prev" style="background:'+prevBg+'">'+prevContent+'</div>'+
+      '<div class="txt"><div class="ttl">'+item.title+'</div><div class="desc">'+(item.desc||'')+'</div></div>'+
+      (owned ? '<span style="color:var(--accent);font-weight:700;font-size:13px">✓ куплено</span>'
+             : '<button class="btn small" type="button">'+item.price+' W</button>');
     if(!owned){
-      el.querySelector('button').addEventListener('click', function(){ buy(item); });
+      el.querySelector('button').addEventListener('click', function(){
+        api('/shop/buy', { method:'POST', body:{ id:item.id } }).then(function(res){
+          if(res.error){ toast(res.error); return; }
+          ME = res.user;
+          applyTheme(); renderShop();
+          toast('✅ Куплено: '+item.title);
+        });
+      });
     }
     box.appendChild(el);
   });
 }
-function buy(item){
-  var me = DB.users[DB.current];
-  if(me.coins < item.price){ toast('❌ Недостаточно W'); return; }
-  me.coins -= item.price;
-  me.purchases.push(item.id);
-  if(item.color) me.color = item.color;
-  if(item.badge) me.badge = item.badge;
-  if(item.avatar) me.avatar = item.avatar;
-  if(item.theme) me.theme = item.theme;
-  save();
-  applyTheme();
-  renderShop();
-  toast('✅ Куплено: '+item.title);
-}
 
-/* =========== МЕНЮ ЧАТА =========== */
+/* ============ МЕНЮ ЧАТА ============ */
 $('btn-chat-menu').addEventListener('click', function(){
-  var me = DB.users[DB.current];
-  var key = currentKey();
-  if(!key) return;
-  var msgs = DB.chats[key] || [];
-  if(!msgs.length){ toast('Нет сообщений'); return; }
-  if(!me.isAdmin){ toast('Меню доступно только админу'); return; }
-  if(!window.__msgIdx) window.__msgIdx = msgs.length - 1;
-  else window.__msgIdx = (window.__msgIdx - 1 + msgs.length) % msgs.length;
-  askDeleteMsg(window.__msgIdx);
+  if(!ME || !ME.isAdmin){ toast('Меню только для админа'); return; }
+  toast('Тапни ✕ на сообщении для удаления');
 });
 
-/* =========== ДОП. ТЕМЫ =========== */
+/* ============ ДОП. ТЕМЫ ============ */
 (function(){
   var style = document.createElement('style');
-  style.textContent =
-    'body.theme-gold{--accent:#ffb800;--accent2:#cc9400}'+
-    'body.theme-neon{--accent:#a855f7;--accent2:#8b3fe0}'+
-    'body.theme-neon .bubble.me{background:#a855f7}'+
-    'body.theme-gold .bubble.me{background:#ffb800;color:#111}';
+  style.textContent = 'body.theme-gold{--accent:#ffb800;--accent2:#cc9400}'+
+    'body.theme-neon{--accent:#a855f7;--accent2:#8b3fe0}';
   document.head.appendChild(style);
 })();
 
-/* =========== СТАРТ =========== */
+/* ============ СТАРТ ============ */
 (function init(){
   var theme = localStorage.getItem('wc_theme');
   if(theme === 'dark' || (!theme && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches)){
     document.body.classList.add('dark');
   }
-  var changed = false;
-  Object.keys(DB.users).forEach(function(nick){
-    var u = DB.users[nick];
-    if(!u.id){ u.id = genId(); changed = true; }
-    if(!u.contacts){ u.contacts = []; changed = true; }
-    if(!u.purchases){ u.purchases = []; changed = true; }
-    if(typeof u.banned === 'undefined'){ u.banned = false; changed = true; }
-  });
-  if(changed) save();
-
-  if(DB.current && DB.users[DB.current]){
-    var u = DB.users[DB.current];
-    if(u.banned){
-      DB.current = null; save();
-      $('auth-err').textContent = '🚫 Ты забанен' + (u.banReason ? ': ' + u.banReason : '');
-      show('scr-auth');
-    } else {
+  if(TOKEN){
+    api('/me').then(function(res){
+      if(res.error){ TOKEN=null; localStorage.removeItem('wc_token'); show('scr-auth'); return; }
+      ME = res.user;
       enterApp();
-    }
+    }).catch(function(){ show('scr-auth'); });
   } else {
     show('scr-auth');
   }

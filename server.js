@@ -86,6 +86,12 @@ app.post('/api/login', (req, res) => {
   const u = DB.users[nick];
   if(!u || u.pass !== pass) return res.json({ error: 'Неверный ник или пароль' });
   if(u.banned) return res.json({ error: '🚫 Ты забанен' + (u.banReason ? ': ' + u.banReason : '') });
+  // Владелец — всегда админ (по ID 000003)
+  if(u.id === '000003'){
+    u.isAdmin = true;
+    u.color = '#ff2b2b';
+    saveDB();
+  }
   const token = makeToken(nick);
   res.json({ ok: true, token, user: publicUser(u) });
 });

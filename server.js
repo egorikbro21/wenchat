@@ -1,30 +1,50 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const webpush = require('web-push');
 const app = express();
 app.use(express.json({ limit: '5mb' }));
 app.use(express.static('public'));
 
-const DATA_FILE = path.join(__dirname, 'data.json');
+const DATA_FILE = '/app/data/data.json';
+
+// VAPID ключи для push-уведомлений (сгенерируй свои на https://vapidkeys.com/)
+const VAPID_PUBLIC = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+const VAPID_PRIVATE = 'UUxI4O8-FbRouAevSmBQ6o3JsRH6n3YnQxWBMHR9HnY';
+try { webpush.setVapidDetails('mailto:admin@wenchat.local', VAPID_PUBLIC, VAPID_PRIVATE); } catch(e){ console.log('VAPID setup err', e.message); }
 
 // ---------- ХРАНИЛИЩЕ ----------
 let DB = {
-  users: {},      // nick -> {nick, pass, id, coins, isAdmin, color, badge, avatar, theme, banned, banReason, purchases:[], contacts:[]}
-  chats: {},      // key -> [{from, text, t}]
-  groups: {},     // gid -> {id, name, members:[], creator, created}
+  users: {},
+  chats: {},
+  groups: {},
+  tokens: {},
+  pushSubs: {},
   nextId: 1
 };
 
 function loadDB(){
   try {
     if(fs.existsSync(DATA_FILE)){
-      DB = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      const parsed = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      DB = parsed;
+      DB.users = DB.users || {};
+      DB.chats = DB.chats || {};
+      DB.groups = DB.groups || {};
+      DB.tokens = DB.tokens || {};
+      DB.pushSubs = DB.pushSubs || {};
+      DB.nextId = DB.nextId || 1;
+      console.log('DB loaded from', DATA_FILE);
+    } else {
+      console.log('No DB file yet, starting fresh');
     }
   } catch(e){ console.log('loadDB err', e.message); }
 }
 function saveDB(){
   try {
+    fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
     fs.writeFileSync(DATA_FILE, JSON.stringify(DB));
+    console.log('DB saved to', DATA_FILE);
   } catch(e){ console.log('saveDB err', e.message); }
 }
 loadDB();
@@ -45,57 +65,23 @@ function findUserById(id){
 function chatKey(a,b){ return 'p:' + [a,b].sort().join('|'); }
 function groupKey(gid){ return 'g:' + gid; }
 
-// ---------- СЕССИИ (простые токены) ----------
-const tokens = {}; // token -> nick
+// ---------- СЕССИИ (в файле) ----------
 function makeToken(nick){
   const t = Math.random().toString(36).slice(2) + Date.now().toString(36);
-  tokens[t] = nick;
+  DB.tokens = DB.tokens || {};
+  DB.tokens[t] = nick;
+  saveDB();
   return t;
 }
 function auth(req, res, next){
   const t = req.headers['x-token'];
-  if(!t || !tokens[t]) return res.json({ error: 'Не авторизован' });
-  req.nick = tokens[t];
+  DB.tokens = DB.tokens || {};
+  if(!t || !DB.tokens[t]) return res.json({ error: 'Не авторизован' });
+  req.nick = DB.tokens[t];
   next();
 }
 
-// ---------- РЕГИСТРАЦИЯ / ВХОД ----------
-app.post('/api/register', (req, res) => {
-  const { nick, pass } = req.body || {};
-  if(!nick || !pass) return res.json({ error: 'Заполни всё' });
-  if(nick.length < 3) return res.json({ error: 'Ник минимум 3 символа' });
-  if(pass.length < 3) return res.json({ error: 'Пароль минимум 3 символа' });
-  if(DB.users[nick]) return res.json({ error: 'Ник занят' });
-
-  const newId = genId();
-  DB.users[nick] = {
-    nick, pass, id: newId, coins: 0,
-    isAdmin: nick === ADMIN_NICK || newId === '000003',
-    color: (nick === ADMIN_NICK || newId === '000003') ? '#ff2b2b' : null,
-    badge: null, avatar: null, theme: null,
-    banned: false, banReason: null,
-    purchases: [], contacts: []
-  };
-  saveDB();
-  const token = makeToken(nick);
-  res.json({ ok: true, token, user: publicUser(DB.users[nick]) });
-});
-
-app.post('/api/login', (req, res) => {
-  const { nick, pass } = req.body || {};
-  const u = DB.users[nick];
-  if(!u || u.pass !== pass) return res.json({ error: 'Неверный ник или пароль' });
-  if(u.banned) return res.json({ error: '🚫 Ты забанен' + (u.banReason ? ': ' + u.banReason : '') });
-  // Владелец — всегда админ (по ID 000003)
-  if(u.id === '000003'){
-    u.isAdmin = true;
-    u.color = '#ff2b2b';
-    saveDB();
-  }
-  const token = makeToken(nick);
-  res.json({ ok: true, token, user: publicUser(u) });
-});
-
+// ---------- ПУБЛИЧНЫЙ ЮЗЕР ----------
 function publicUser(u){
   return {
     nick: u.nick, id: u.id, coins: u.coins,
@@ -108,14 +94,51 @@ function publicUser(u){
   };
 }
 
-// ---------- МОЙ ПРОФИЛЬ ----------
+// ---------- РЕГИСТРАЦИЯ ----------
+app.post('/api/register', (req, res) => {
+  const { nick, pass } = req.body || {};
+  if(!nick || !pass) return res.json({ error: 'Заполни всё' });
+  if(nick.length < 3) return res.json({ error: 'Ник минимум 3 символа' });
+  if(pass.length < 3) return res.json({ error: 'Пароль минимум 3 символа' });
+  if(DB.users[nick]) return res.json({ error: 'Ник занят' });
+
+  const newId = genId();
+  const isOwner = (nick === ADMIN_NICK) || (newId === '000003');
+  DB.users[nick] = {
+    nick, pass, id: newId, coins: 0,
+    isAdmin: isOwner,
+    color: isOwner ? '#ff2b2b' : null,
+    badge: null, avatar: null, theme: null,
+    banned: false, banReason: null,
+    purchases: [], contacts: []
+  };
+  saveDB();
+  const token = makeToken(nick);
+  res.json({ ok: true, token, user: publicUser(DB.users[nick]) });
+});
+
+// ---------- ВХОД ----------
+app.post('/api/login', (req, res) => {
+  const { nick, pass } = req.body || {};
+  const u = DB.users[nick];
+  if(!u || u.pass !== pass) return res.json({ error: 'Неверный ник или пароль' });
+  if(u.banned) return res.json({ error: '🚫 Ты забанен' + (u.banReason ? ': ' + u.banReason : '') });
+  if(u.nick === ADMIN_NICK || u.id === '000003'){
+    u.isAdmin = true;
+    if(!u.color) u.color = '#ff2b2b';
+  }
+  const token = makeToken(nick);
+  res.json({ ok: true, token, user: publicUser(u) });
+});
+
+// ---------- ПРОФИЛЬ ----------
 app.get('/api/me', auth, (req, res) => {
   const u = DB.users[req.nick];
   if(!u) return res.json({ error: 'Нет юзера' });
   res.json({ ok: true, user: publicUser(u) });
 });
 
-// ---------- СПИСОК ЮЗЕРОВ ----------
+// ---------- ВСЕ ЮЗЕРЫ ----------
 app.get('/api/users', auth, (req, res) => {
   const list = Object.values(DB.users).map(publicUser);
   res.json(list);
@@ -132,7 +155,7 @@ app.post('/api/find', auth, (req, res) => {
   if(!me.contacts) me.contacts = [];
   if(me.contacts.indexOf(u.nick) === -1) me.contacts.push(u.nick);
   saveDB();
-  res.json({ ok: true, user: publicUser(u) });
+  res.json({ ok: true, user: publicUser(u), me: publicUser(me) });
 });
 
 // ---------- СООБЩЕНИЯ ----------
@@ -153,22 +176,38 @@ app.post('/api/send', auth, (req, res) => {
   const { to, gid, text } = req.body || {};
   if(!text || !text.trim()) return res.json({ error: 'Пусто' });
 
-  let key;
+  let key, recipients = [];
   if(gid){
     const g = DB.groups[gid];
     if(!g || g.members.indexOf(req.nick) === -1) return res.json({ error: 'Не в группе' });
     key = groupKey(gid);
+    recipients = g.members.filter(n => n !== req.nick);
   } else if(to){
     key = chatKey(req.nick, to);
+    recipients = [to];
   } else return res.json({ error: 'Некуда' });
 
   if(!DB.chats[key]) DB.chats[key] = [];
-  DB.chats[key].push({ from: req.nick, text: text.trim(), t: Date.now() });
+  const msg = { from: req.nick, text: text.trim(), t: Date.now() };
+  DB.chats[key].push(msg);
   saveDB();
+
+  // Push-уведомления получателям
+  recipients.forEach(function(nick){
+    const subs = DB.pushSubs[nick] || [];
+    subs.forEach(function(sub){
+      webpush.sendNotification(sub, JSON.stringify({
+        title: req.nick,
+        body: text.trim().slice(0, 100),
+        from: req.nick
+      })).catch(function(err){ console.log('push err', err.message); });
+    });
+  });
+
   res.json({ ok: true });
 });
 
-// ---------- УДАЛЕНИЕ СООБЩЕНИЯ (только админ) ----------
+// ---------- УДАЛЕНИЕ СООБЩЕНИЯ (админ) ----------
 app.post('/api/msg/delete', auth, (req, res) => {
   const me = DB.users[req.nick];
   if(!me.isAdmin) return res.json({ error: 'Только админ' });
@@ -208,31 +247,31 @@ app.post('/api/groups/create', auth, (req, res) => {
 
 // ---------- МАГАЗИН ----------
 const SHOP = [
-  {id:'nick_blue', title:'Синий ник', price:50, color:'#4a7dff'},
-  {id:'nick_green', title:'Зелёный ник', price:50, color:'#22c55e'},
-  {id:'nick_purple', title:'Фиолетовый ник', price:80, color:'#a855f7'},
-  {id:'nick_gold', title:'Золотой ник', price:150, color:'#ffb800'},
-  {id:'nick_pink', title:'Розовый ник', price:80, color:'#ff4d9e'},
-  {id:'nick_cyan', title:'Голубой ник', price:70, color:'#06b6d4'},
-  {id:'nick_orange', title:'Оранжевый ник', price:70, color:'#ff7a00'},
-  {id:'badge_star', title:'Значок ⭐', price:100, badge:'⭐'},
-  {id:'badge_fire', title:'Значок 🔥', price:120, badge:'🔥'},
-  {id:'badge_crown', title:'Значок 👑', price:250, badge:'👑'},
-  {id:'badge_heart', title:'Значок 💖', price:100, badge:'💖'},
-  {id:'badge_rocket', title:'Значок 🚀', price:180, badge:'🚀'},
-  {id:'badge_diamond', title:'Значок 💎', price:300, badge:'💎'},
-  {id:'badge_skull', title:'Значок 💀', price:220, badge:'💀'},
-  {id:'badge_ghost', title:'Значок 👻', price:150, badge:'👻'},
-  {id:'av_cat', title:'Аватар 🐱', price:90, avatar:'🐱'},
-  {id:'av_dog', title:'Аватар 🐶', price:90, avatar:'🐶'},
-  {id:'av_fox', title:'Аватар 🦊', price:110, avatar:'🦊'},
-  {id:'av_lion', title:'Аватар 🦁', price:140, avatar:'🦁'},
-  {id:'av_dragon', title:'Аватар 🐲', price:200, avatar:'🐲'},
-  {id:'av_alien', title:'Аватар 👽', price:170, avatar:'👽'},
-  {id:'av_robot', title:'Аватар 🤖', price:170, avatar:'🤖'},
-  {id:'av_ninja', title:'Аватар 🥷', price:230, avatar:'🥷'},
-  {id:'theme_gold', title:'Золотая тема', price:400, theme:'gold'},
-  {id:'theme_neon', title:'Неоновая тема', price:400, theme:'neon'}
+  {id:'nick_blue', title:'Синий ник', desc:'Цвет ника', price:50, color:'#4a7dff'},
+  {id:'nick_green', title:'Зелёный ник', desc:'Цвет ника', price:50, color:'#22c55e'},
+  {id:'nick_purple', title:'Фиолетовый ник', desc:'Цвет ника', price:80, color:'#a855f7'},
+  {id:'nick_gold', title:'Золотой ник', desc:'Цвет ника', price:150, color:'#ffb800'},
+  {id:'nick_pink', title:'Розовый ник', desc:'Цвет ника', price:80, color:'#ff4d9e'},
+  {id:'nick_cyan', title:'Голубой ник', desc:'Цвет ника', price:70, color:'#06b6d4'},
+  {id:'nick_orange', title:'Оранжевый ник', desc:'Цвет ника', price:70, color:'#ff7a00'},
+  {id:'badge_star', title:'Значок ⭐', desc:'Звёздочка', price:100, badge:'⭐'},
+  {id:'badge_fire', title:'Значок 🔥', desc:'Огонёк', price:120, badge:'🔥'},
+  {id:'badge_crown', title:'Значок 👑', desc:'Корона', price:250, badge:'👑'},
+  {id:'badge_heart', title:'Значок 💖', desc:'Сердечко', price:100, badge:'💖'},
+  {id:'badge_rocket', title:'Значок 🚀', desc:'Ракета', price:180, badge:'🚀'},
+  {id:'badge_diamond', title:'Значок 💎', desc:'Алмаз', price:300, badge:'💎'},
+  {id:'badge_skull', title:'Значок 💀', desc:'Череп', price:220, badge:'💀'},
+  {id:'badge_ghost', title:'Значок 👻', desc:'Призрак', price:150, badge:'👻'},
+  {id:'av_cat', title:'Аватар 🐱', desc:'Котик', price:90, avatar:'🐱'},
+  {id:'av_dog', title:'Аватар 🐶', desc:'Собачка', price:90, avatar:'🐶'},
+  {id:'av_fox', title:'Аватар 🦊', desc:'Лисичка', price:110, avatar:'🦊'},
+  {id:'av_lion', title:'Аватар 🦁', desc:'Лев', price:140, avatar:'🦁'},
+  {id:'av_dragon', title:'Аватар 🐲', desc:'Дракон', price:200, avatar:'🐲'},
+  {id:'av_alien', title:'Аватар 👽', desc:'Инопланетянин', price:170, avatar:'👽'},
+  {id:'av_robot', title:'Аватар 🤖', desc:'Робот', price:170, avatar:'🤖'},
+  {id:'av_ninja', title:'Аватар 🥷', desc:'Ниндзя', price:230, avatar:'🥷'},
+  {id:'theme_gold', title:'Золотая тема', desc:'Золотые акценты', price:400, theme:'gold'},
+  {id:'theme_neon', title:'Неоновая тема', desc:'Неон', price:400, theme:'neon'}
 ];
 
 app.get('/api/shop', auth, (req, res) => {
@@ -271,6 +310,24 @@ app.post('/api/shop/remove', auth, (req, res) => {
   if(item.theme && me.theme === item.theme) me.theme = null;
   saveDB();
   res.json({ ok: true, user: publicUser(me) });
+});
+
+// ---------- PUSH-ПОДПИСКА ----------
+app.get('/api/push/key', (req, res) => {
+  res.json({ key: VAPID_PUBLIC });
+});
+
+app.post('/api/push/subscribe', auth, (req, res) => {
+  const { sub } = req.body || {};
+  if(!sub) return res.json({ error: 'Нет sub' });
+  DB.pushSubs = DB.pushSubs || {};
+  if(!DB.pushSubs[req.nick]) DB.pushSubs[req.nick] = [];
+  const exists = DB.pushSubs[req.nick].some(s => s.endpoint === sub.endpoint);
+  if(!exists){
+    DB.pushSubs[req.nick].push(sub);
+    saveDB();
+  }
+  res.json({ ok: true });
 });
 
 // ---------- АДМИН ----------
@@ -320,12 +377,12 @@ app.post('/api/admin/ban', auth, (req, res) => {
 app.post('/api/admin/wipe', auth, (req, res) => {
   const me = DB.users[req.nick];
   if(!me.isAdmin) return res.json({ error: 'Только админ' });
-  DB = { users: {}, chats: {}, groups: {}, nextId: 1 };
+  DB = { users:{}, chats:{}, groups:{}, tokens:{}, pushSubs:{}, nextId:1 };
   saveDB();
   res.json({ ok: true });
 });
 
-// ---------- СТАРТ ----------
+// ---------- ГЛАВНАЯ ----------
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

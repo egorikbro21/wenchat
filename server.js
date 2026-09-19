@@ -82,7 +82,7 @@ function auth(req, res, next){
 }
 
 // ---------- ПУБЛИЧНЫЙ ЮЗЕР ----------
-function publicUser(u){
+function publicUser(u) {
   return {
     nick: u.nick, id: u.id, coins: u.coins,
     isAdmin: !!u.isAdmin, color: u.color || null,
@@ -90,7 +90,9 @@ function publicUser(u){
     theme: u.theme || null,
     banned: !!u.banned, banReason: u.banReason || null,
     purchases: u.purchases || [],
-    contacts: u.contacts || []
+    removedItems: u.removedItems || [],
+    contacts: u.contacts || [],
+    isBot: !!u.isBot
   };
 }
 
@@ -187,10 +189,22 @@ app.post('/api/send', auth, (req, res) => {
     recipients = [to];
   } else return res.json({ error: 'Некуда' });
 
-  if(!DB.chats[key]) DB.chats[key] = [];
+  if (!DB.chats[key]) DB.chats[key] = [];
   const msg = { from: req.nick, text: text.trim(), t: Date.now() };
   DB.chats[key].push(msg);
   saveDB();
+
+  // Бот отвечает
+  const botUser = DB.users[BOT_NICK];
+  if (botUser && !gid && to === BOT_NICK) {
+    setTimeout(function () {
+      const reply = botReply(text);
+      const botKey = chatKey(BOT_NICK, req.nick);
+      if (!DB.chats[botKey]) DB.chats[botKey] = [];
+      DB.chats[botKey].push({ from: BOT_NICK, text: reply, t: Date.now() });
+      saveDB();
+    }, 500);
+  }
 
   // Push-уведомления получателям
   recipients.forEach(function(nick){
@@ -380,6 +394,209 @@ app.post('/api/admin/wipe', auth, (req, res) => {
   DB = { users:{}, chats:{}, groups:{}, tokens:{}, pushSubs:{}, nextId:1 };
   saveDB();
   res.json({ ok: true });
+});
+
+// ---------- ЧАТ-БОТ 999999 ----------
+const BOT_ID = '999999';
+const BOT_NICK = 'Wenbot';
+
+app.post('/api/bot/init', auth, (req, res) => {
+  // Создаём бота, если его нет
+  if (!DB.users[BOT_NICK]) {
+    DB.users[BOT_NICK] = {
+      nick: BOT_NICK, pass: 'bot_' + Math.random().toString(36).slice(2),
+      id: BOT_ID, coins: 0, isAdmin: false,
+      color: '#a855f7', badge: '🤖', avatar: '🤖', theme: null,
+      banned: false, banReason: null,
+      purchases: [], contacts: [], isBot: true
+    };
+    saveDB();
+  }
+  const me = DB.users[req.nick];
+  if (!me.contacts) me.contacts = [];
+  if (me.contacts.indexOf(BOT_NICK) === -1) {
+    me.contacts.push(BOT_NICK);
+    saveDB();
+  }
+  res.json({ ok: true, user: publicUser(DB.users[BOT_NICK]) });
+});
+
+function botReply(text) {
+  const t = (text || '').trim();
+  const low = t.toLowerCase();
+
+  if (low === '/help' || low === 'помощь' || low === 'help') {
+    return '🤖 **Мои команды:**\n\n' +
+      '📌 Базовое:\n/help — все команды\n/ping — проверить связь\n/id — твой ID\n/time — время\n/date — дата\n\n' +
+      '🧮 Полезное:\n/calc 2+2 — калькулятор\n/random 1 100 — случайное число\n/coin — монетка\n/dice — кубик\n/password 16 — пароль\n\n' +
+      '🌍 Инфо:\n/weather Москва — погода\n/wiki Россия — справка\n\n' +
+      '🎉 Приколы:\n/joke — шутка\n/fact — факт\n/quote — цитата\n/8ball Вопрос? — магический шар\n/love Ты и Я — совместимость\n\n' +
+      'Просто напиши мне что-нибудь — отвечу 😊';
+  }
+
+  if (low === '/ping') return '🏓 Понг! Я на связи.';
+  if (low === '/id') return '🆔 Твой ID виден в ⚙️ Настройки → Мой ID';
+  if (low === '/time') {
+    const d = new Date();
+    return '🕐 ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  }
+  if (low === '/date') {
+    const d = new Date();
+    return '📅 ' + d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  if (low.startsWith('/calc')) {
+    const expr = t.slice(5).trim();
+    if (!expr) return '🧮 Пример: /calc 2+2';
+    if (!/^[\d\s+\-*/().,%]+$/.test(expr)) return '⚠️ Только цифры и + - * / ( )';
+    try {
+      const result = Function('"use strict";return (' + expr.replace(/,/g, '.') + ')')();
+      return '🧮 ' + expr + ' = ' + result;
+    } catch (e) { return '⚠️ Не смог посчитать'; }
+  }
+  if (low.startsWith('/random')) {
+    const m = t.match(/(\d+)\s+(\d+)/);
+    if (!m) return '🎲 Пример: /random 1 100';
+    const a = parseInt(m[1]), b = parseInt(m[2]);
+    if (a >= b) return '⚠️ Первое число должно быть меньше';
+    return '🎲 Случайное: ' + (Math.floor(Math.random() * (b - a + 1)) + a);
+  }
+  if (low === '/coin') return Math.random() < 0.5 ? '🪙 Орёл!' : '🪙 Решка!';
+  if (low === '/dice') return '🎲 Выпало: ' + (Math.floor(Math.random() * 6) + 1);
+  if (low.startsWith('/password')) {
+    const m = t.match(/\d+/);
+    const len = m ? Math.min(parseInt(m[0]), 64) : 16;
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+    let p = '';
+    for (let i = 0; i < len; i++) p += chars[Math.floor(Math.random() * chars.length)];
+    return '🔐 Пароль (' + len + '):\n' + p;
+  }
+  if (low.startsWith('/weather')) {
+    const city = t.slice(8).trim();
+    if (!city) return '🌤 Пример: /weather Москва';
+    return '🌤 Погода в ' + city + ':\n(скоро подключу API)';
+  }
+  if (low.startsWith('/wiki')) {
+    const q = t.slice(5).trim();
+    if (!q) return '📚 Пример: /wiki Россия';
+    return '📚 ' + q + ':\n(скоро подключу API)';
+  }
+  if (low === '/joke') {
+    const jokes = [
+      '— Почему программисты путают Хэллоуин и Рождество?\n— Потому что Oct 31 == Dec 25 🎃',
+      '— Сколько программистов нужно, чтобы вкрутить лампочку?\n— Ни одного, это аппаратная проблема 💡',
+      '— Какой любимый напиток программиста?\n— Java ☕',
+      '— Что говорит программист, когда тонет?\n— F1! F1! 🆘',
+      '— Почему Java-разработчики носят очки?\n— Потому что не видят C# 👓'
+    ];
+    return jokes[Math.floor(Math.random() * jokes.length)];
+  }
+  if (low === '/fact') {
+    const facts = [
+      '🐙 У осьминога три сердца.',
+      '🍯 Мёд никогда не портится.',
+      '🌍 Земля вращается вокруг Солнца со скоростью 107 000 км/ч.',
+      '🐌 У улитки около 25 000 зубов.',
+      '🦈 Акулы существуют дольше, чем деревья.',
+      '⚡ Молния горячее поверхности Солнца в 5 раз.',
+      '🎈 Первый компьютер Apple стоил $666,66.',
+      '🐘 Слоны — единственные животные, которые не умеют прыгать.'
+    ];
+    return facts[Math.floor(Math.random() * facts.length)];
+  }
+  if (low === '/quote') {
+    const quotes = [
+      '«Не откладывай на завтра то, что можно сделать послезавтра.» 😴',
+      '«Единственный способ делать великие дела — любить то, что делаешь.» — Стив Джобс',
+      '«Успех — это способность идти от неудачи к неудаче, не теряя энтузиазма.» — Черчилль',
+      '«Код, который работает — не трогай.» — Народная мудрость 👨‍💻',
+      '«Простота — высшая форма изящества.» — Леонардо да Винчи'
+    ];
+    return quotes[Math.floor(Math.random() * quotes.length)];
+  }
+  if (low.startsWith('/8ball')) {
+    const q = t.slice(6).trim();
+    if (!q) return '🔮 Задай вопрос: /8ball Я сдам экзамен?';
+    const answers = [
+      '✅ Да, однозначно!',
+      '✅ Скорее да.',
+      '🤔 Возможно.',
+      '🤔 Не уверен.',
+      '❌ Скорее нет.',
+      '❌ Нет.',
+      '🔮 Спроси позже.',
+      '✨ Всё в твоих руках!'
+    ];
+    return '🔮 ' + answers[Math.floor(Math.random() * answers.length)];
+  }
+  if (low.startsWith('/love')) {
+    const parts = t.slice(5).trim();
+    if (!parts) return '💖 Пример: /love Ты и Я';
+    const h = parts.split('').reduce(function (a, c) { return a + c.charCodeAt(0); }, 0);
+    const pct = (h * 7) % 101;
+    return '💖 Совместимость: ' + pct + '%\n' + (pct > 70 ? '💘 Отличная пара!' : pct > 40 ? '😊 Есть шансы!' : '😅 Может, просто друзья?');
+  }
+
+  // Дефолтный ответ
+  const defaults = [
+    'Привет! Я Wenbot 🤖 Напиши /help, чтобы узнать команды.',
+    'Хм, интересно! Попробуй /help — там много полезного 😊',
+    'Я пока учусь. Напиши /help, если нужна помощь!',
+    'Что-то я не понял. Может, /help? 😅',
+    'Хорошего дня! ☀️ Если нужны команды — /help'
+  ];
+  return defaults[Math.floor(Math.random() * defaults.length)];
+}
+
+// ---------- СНЯТЫЕ ПРЕДМЕТЫ ----------
+// Хранятся в поле removedItems у каждого юзера
+app.post('/api/shop/unequip', auth, (req, res) => {
+  const me = DB.users[req.nick];
+  const { id } = req.body || {};
+  const item = SHOP.find(i => i.id === id);
+  if (!item) return res.json({ error: 'Нет товара' });
+  if ((me.purchases || []).indexOf(id) === -1) return res.json({ error: 'Не куплено' });
+
+  // Убираем из purchases
+  me.purchases.splice(me.purchases.indexOf(id), 1);
+  // Добавляем в removedItems
+  me.removedItems = me.removedItems || [];
+  if (me.removedItems.indexOf(id) === -1) me.removedItems.push(id);
+  // Сбрасываем эффект
+  if (item.color && me.color === item.color) me.color = me.isAdmin ? '#ff2b2b' : null;
+  if (item.badge && me.badge === item.badge) me.badge = null;
+  if (item.avatar && me.avatar === item.avatar) me.avatar = null;
+  if (item.theme && me.theme === item.theme) me.theme = null;
+  saveDB();
+  res.json({ ok: true, user: publicUser(me) });
+});
+
+app.post('/api/shop/re-equip', auth, (req, res) => {
+  const me = DB.users[req.nick];
+  const { id } = req.body || {};
+  const item = SHOP.find(i => i.id === id);
+  if (!item) return res.json({ error: 'Нет товара' });
+  me.removedItems = me.removedItems || [];
+  if (me.removedItems.indexOf(id) === -1) return res.json({ error: 'Не снято' });
+  me.removedItems.splice(me.removedItems.indexOf(id), 1);
+  me.purchases = me.purchases || [];
+  if (me.purchases.indexOf(id) === -1) me.purchases.push(id);
+  if (item.color) me.color = item.color;
+  if (item.badge) me.badge = item.badge;
+  if (item.avatar) me.avatar = item.avatar;
+  if (item.theme) me.theme = item.theme;
+  saveDB();
+  res.json({ ok: true, user: publicUser(me) });
+});
+
+app.post('/api/shop/forget', auth, (req, res) => {
+  const me = DB.users[req.nick];
+  const { id } = req.body || {};
+  me.removedItems = me.removedItems || [];
+  const idx = me.removedItems.indexOf(id);
+  if (idx === -1) return res.json({ error: 'Не снято' });
+  me.removedItems.splice(idx, 1);
+  saveDB();
+  res.json({ ok: true, user: publicUser(me) });
 });
 
 // ---------- ГЛАВНАЯ ----------

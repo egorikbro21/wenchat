@@ -979,6 +979,18 @@ function openProfile(nick){
   $('btn-prof-write').onclick = function(){
     openPrivate(nick);
   };
+    $('btn-prof-remove').onclick = function(){
+    if(!confirm('Удалить ' + nick + ' из друзей?')) return;
+    api('/friends/remove', { method:'POST', body:{ nick: nick } }).then(function(res){
+      if(res.error){ toast(res.error); return; }
+      ME = res.me;
+      toast('Удалён из друзей');
+      loadUsers().then(function(){
+        renderChats();
+        show('scr-list');
+      });
+    });
+  };
   show('scr-profile');
 }
 $('btn-back-prof').addEventListener('click', function(){ show('scr-chat'); });

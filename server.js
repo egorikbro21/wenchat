@@ -662,6 +662,19 @@ app.post('/api/admin/broadcast', auth, (req, res) => {
   saveDB();
   res.json({ ok: true, count });
 });
+
+// ---------- УДАЛИТЬ ИЗ ДРУЗЕЙ ----------
+app.post('/api/friends/remove', auth, (req, res) => {
+  const me = DB.users[req.nick];
+  const { nick } = req.body || {};
+  if(!nick) return res.json({ error: 'Не указан ник' });
+  if(!me.contacts) me.contacts = [];
+  const idx = me.contacts.indexOf(nick);
+  if(idx === -1) return res.json({ error: 'Не в друзьях' });
+  me.contacts.splice(idx, 1);
+  saveDB();
+  res.json({ ok: true, me: publicUser(me) });
+});
   
 // ---------- ГЛАВНАЯ ----------
 app.get('/', (req, res) => {

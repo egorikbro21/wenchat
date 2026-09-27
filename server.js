@@ -628,6 +628,7 @@ app.post('/api/admin/set-admin', auth, (req, res) => {
   saveDB();
   res.json({ ok: true, user: publicUser(u) });
 });
+
 app.post('/api/admin/ban', auth, (req, res) => {
   const me = DB.users[req.nick];
   if(!me.isAdmin) return res.json({ error: 'Только админ' });
@@ -638,7 +639,7 @@ app.post('/api/admin/ban', auth, (req, res) => {
   u.banReason = banned ? (reason || null) : null;
   saveDB();
   res.json({ ok: true, user: publicUser(u) });
-});
+  
 app.post('/api/admin/broadcast', auth, (req, res) => {
   const me = DB.users[req.nick];
   if(!me.isAdmin) return res.json({ error: 'Только админ' });
@@ -648,20 +649,20 @@ app.post('/api/admin/broadcast', auth, (req, res) => {
   for(const k in DB.users){
     if(DB.users[k].isBot) continue;
     if(k === req.nick) continue;
+    // Добавляем бота в контакты, если его нет
+    const u = DB.users[k];
+    if(!u.contacts) u.contacts = [];
+    if(u.contacts.indexOf(BOT_NICK) === -1) u.contacts.push(BOT_NICK);
+    // Пишем сообщение
     const key = chatKey(BOT_NICK, k);
-   if(!DB.chats[key]) DB.chats[key] = [];
-  const msgObj = { from: req.nick, text: text.trim(), t: Date.now() };
-  if(req.body.replyTo && req.body.replyTo.from){
-    msgObj.replyTo = { from: req.body.replyTo.from, text: String(req.body.replyTo.text || '').slice(0, 200) };
-  }
-  DB.chats[key].push(msgObj);
-  saveDB(); 
-    
+    if(!DB.chats[key]) DB.chats[key] = [];
+    DB.chats[key].push({ from: BOT_NICK, text: '📢 ' + text.trim(), t: Date.now() });
+    count++;
   }
   saveDB();
   res.json({ ok: true, count });
 });
-
+  
 // ---------- ГЛАВНАЯ ----------
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

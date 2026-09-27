@@ -649,9 +649,14 @@ app.post('/api/admin/broadcast', auth, (req, res) => {
     if(DB.users[k].isBot) continue;
     if(k === req.nick) continue;
     const key = chatKey(BOT_NICK, k);
-    if(!DB.chats[key]) DB.chats[key] = [];
-    DB.chats[key].push({ from: BOT_NICK, text: '📢 ' + text.trim(), t: Date.now() });
-    count++;
+   if(!DB.chats[key]) DB.chats[key] = [];
+  const msgObj = { from: req.nick, text: text.trim(), t: Date.now() };
+  if(req.body.replyTo && req.body.replyTo.from){
+    msgObj.replyTo = { from: req.body.replyTo.from, text: String(req.body.replyTo.text || '').slice(0, 200) };
+  }
+  DB.chats[key].push(msgObj);
+  saveDB(); 
+    
   }
   saveDB();
   res.json({ ok: true, count });

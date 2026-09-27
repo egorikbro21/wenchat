@@ -20,6 +20,8 @@ body.dark{
   --bubble-me:#3566e0; --bubble-me-text:#fff;
   --bubble-you:#22262d; --bubble-you-text:#eaeaea;
 }
+body.theme-gold{--accent:#ffb800;--accent2:#cc9400}
+body.theme-neon{--accent:#a855f7;--accent2:#8b3fe0}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
 button,input,textarea{font-family:inherit}
@@ -50,18 +52,21 @@ input:focus,textarea:focus{border-color:var(--accent)}
 .list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .chat-item{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--border);cursor:pointer}
 .chat-item:active{background:var(--bg2)}
-.av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#4a7dff,#a34aff);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0}
+.av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#4a7dff,#a34aff);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:22px;flex-shrink:0}
 .av.admin{background:linear-gradient(135deg,#ff2b2b,#a30000)}
+.av.bot{background:linear-gradient(135deg,#a855f7,#7c3aed)}
 .av.group{background:linear-gradient(135deg,#22c55e,#15803d)}
 .av.banned{filter:grayscale(1);opacity:.55}
 .chat-meta{flex:1;min-width:0}
 .chat-meta .name{font-weight:600;font-size:15px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .chat-meta .last{color:var(--text2);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 .badge-admin{background:var(--admin);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-transform:uppercase}
+.badge-bot{background:#a855f7;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-transform:uppercase}
 .badge-group{background:var(--group);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-transform:uppercase}
 .badge-ban{background:#444;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-transform:uppercase}
+.badge-status{font-size:10px;padding:2px 6px;border-radius:6px;background:var(--bg3);color:var(--text2)}
 .chat-hdr{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
-.chat-hdr .info{flex:1;min-width:0}
+.chat-hdr .info{flex:1;min-width:0;cursor:pointer}
 .chat-hdr .info .n{font-weight:600;font-size:15px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .chat-hdr .info .sub{font-size:11px;color:var(--text2);margin-top:2px}
 .msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch}
@@ -70,10 +75,14 @@ input:focus,textarea:focus{border-color:var(--accent)}
 .bubble.you{align-self:flex-start;background:var(--bubble-you);color:var(--bubble-you-text);border-bottom-left-radius:4px}
 .bubble .author{font-size:12px;font-weight:700;margin-bottom:3px;color:var(--accent)}
 .bubble .time{font-size:10px;opacity:.65;margin-top:3px;text-align:right}
+.bubble .reply-quote{background:rgba(0,0,0,.15);border-left:3px solid var(--accent);padding:4px 8px;border-radius:6px;font-size:12px;opacity:.85;margin-bottom:4px}
 .bubble.emoji-only{background:transparent!important;font-size:38px;padding:2px 6px;line-height:1}
 .bubble.emoji-only .time{font-size:9px;color:var(--text2);opacity:.7}
 .bubble .del-btn{position:absolute;top:-8px;right:-8px;background:var(--danger);color:#fff;border-radius:50%;width:24px;height:24px;font-size:12px;display:none;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3);z-index:5}
 .bubble.can-delete .del-btn{display:flex}
+.bubble .reactions{display:flex;gap:3px;flex-wrap:wrap;margin-top:5px}
+.bubble .reactions span{background:rgba(255,255,255,.25);border-radius:10px;padding:2px 7px;font-size:12px;cursor:pointer}
+.bubble.you .reactions span{background:rgba(0,0,0,.1)}
 .input-bar{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0}
 .input-bar input{flex:1;border-radius:22px}
 .input-bar button{background:var(--accent);color:#fff;border-radius:50%;width:46px;height:46px;font-size:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
@@ -88,7 +97,7 @@ input:focus,textarea:focus{border-color:var(--accent)}
 .switch.on::after{left:23px}
 .id-badge{font-family:monospace;background:var(--bg3);padding:3px 8px;border-radius:6px;font-size:13px;letter-spacing:1px}
 .shop-item{display:flex;gap:12px;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:10px}
-.shop-item .prev{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;color:#fff;flex-shrink:0}
+.shop-item .prev{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px;color:#fff;flex-shrink:0}
 .shop-item .txt{flex:1;min-width:0}
 .shop-item .ttl{font-weight:600;font-size:14px}
 .shop-item .desc{font-size:12px;color:var(--text2);margin-top:2px}
@@ -97,7 +106,7 @@ input:focus,textarea:focus{border-color:var(--accent)}
 .user-pick{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;cursor:pointer;border:1px solid transparent}
 .user-pick:active{background:var(--bg3)}
 .user-pick.selected{background:var(--bg3);border-color:var(--accent)}
-.user-pick .av{width:38px;height:38px;font-size:15px}
+.user-pick .av{width:38px;height:38px;font-size:18px}
 .user-pick .n{flex:1;font-weight:600;font-size:14px}
 .user-pick .c{font-size:12px;color:var(--text2)}
 .user-pick .check{color:var(--accent);font-size:18px;font-weight:800}
@@ -109,6 +118,8 @@ input:focus,textarea:focus{border-color:var(--accent)}
 .modal-actions .btn{flex:1}
 .emoji-pick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:50vh;overflow-y:auto}
 .emoji-pick button{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px;font-size:22px;line-height:1;width:46px;height:46px;display:flex;align-items:center;justify-content:center}
+.react-pick{display:flex;gap:8px;justify-content:center;margin-top:8px}
+.react-pick button{background:var(--bg2);border:1px solid var(--border);border-radius:50%;width:48px;height:48px;font-size:24px;display:flex;align-items:center;justify-content:center}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#222;color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;opacity:0;transition:.25s;z-index:200;max-width:90%;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .empty{text-align:center;color:var(--text2);padding:40px 20px;font-size:14px;line-height:1.5}
@@ -162,7 +173,7 @@ input:focus,textarea:focus{border-color:var(--accent)}
   <div class="chat-hdr">
     <button class="icon-btn" id="btn-back" type="button">←</button>
     <div class="av" id="cv-av">?</div>
-    <div class="info">
+    <div class="info" id="cv-info">
       <div class="n" id="cv-name">—</div>
       <div class="sub" id="cv-sub"></div>
     </div>
@@ -191,6 +202,18 @@ input:focus,textarea:focus{border-color:var(--accent)}
       <div class="row"><span>Цвет ника</span><b id="st-color">по умолчанию</b></div>
       <div class="row"><span>Значок</span><b id="st-badge">нет</b></div>
       <div class="row"><span>Аватар</span><b id="st-avatar">по умолчанию</b></div>
+      <div class="row"><span>Мой статус</span>
+        <select id="sel-status" style="width:auto;padding:6px 10px;font-size:14px">
+          <option value="online">🟢 В сети</option>
+          <option value="away">🟡 Отошёл</option>
+          <option value="dnd">🔴 Не беспокоить</option>
+        </select>
+      </div>
+      <div class="row" style="flex-direction:column;align-items:stretch">
+        <span style="margin-bottom:6px">О себе</span>
+        <input id="in-bio" maxlength="200" placeholder="Пара слов о себе" style="font-size:14px">
+        <button class="btn small" id="btn-save-bio" type="button" style="margin-top:8px;width:auto;align-self:flex-start">Сохранить</button>
+      </div>
     </div>
     <div class="card">
       <h3>Внешний вид</h3>
@@ -200,6 +223,10 @@ input:focus,textarea:focus{border-color:var(--accent)}
     <div class="card">
       <h3>Мои покупки</h3>
       <div id="my-purchases"></div>
+    </div>
+    <div class="card">
+      <h3>📦 Снятые предметы</h3>
+      <div id="my-removed"></div>
     </div>
     <div class="card">
       <h3>Аккаунт</h3>
@@ -232,11 +259,23 @@ input:focus,textarea:focus{border-color:var(--accent)}
         </div>
       </div>
     </div>
-    <div class="card"><h3>🚫 Управление пользователями</h3><div id="admin-all"></div></div>
-    <div class="card" style="border-color:#ff2b2b55">
-      <h3 style="color:var(--admin)">🗑️ Опасная зона</h3>
-      <button class="btn danger" style="width:100%" id="btn-wipe" type="button">Очистить базу</button>
+    <div class="card">
+      <h3>📢 Массовая рассылка</h3>
+      <p style="font-size:12px;color:var(--text2);margin:0 0 8px">Придёт всем от имени бота</p>
+      <input id="in-broadcast" placeholder="Текст сообщения" maxlength="500" style="margin-bottom:8px">
+      <button class="btn" id="btn-broadcast" type="button" style="width:100%">Отправить всем</button>
     </div>
+    <div class="card">
+      <h3>💰 Коины всем</h3>
+      <div class="row"><span>Выдать всем</span>
+        <div style="display:flex;gap:6px">
+          <input id="in-all-coins" type="number" value="10" style="width:80px;padding:8px">
+          <button class="btn small" id="btn-coins-add-all" type="button">+W</button>
+          <button class="btn danger small" id="btn-coins-sub-all" type="button">-W</button>
+        </div>
+      </div>
+    </div>
+    <div class="card"><h3>🚫 Управление пользователями</h3><div id="admin-all"></div></div>
   </div>
 </div>
 
@@ -248,6 +287,23 @@ input:focus,textarea:focus{border-color:var(--accent)}
   <div class="page">
     <div class="coin-bar">Баланс: <span class="coin">W</span> <span id="shop-bal">0</span></div>
     <div id="shop-list"></div>
+  </div>
+</div>
+
+<div class="screen" id="scr-profile">
+  <div class="hdr">
+    <button class="icon-btn" id="btn-back-prof" type="button">←</button>
+    <h1>Профиль</h1>
+  </div>
+  <div class="page">
+    <div class="card" style="text-align:center">
+      <div class="av" id="prof-av" style="width:80px;height:80px;font-size:40px;margin:0 auto 12px"></div>
+      <h2 id="prof-nick" style="margin:0 0 6px"></h2>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:8px">ID: <span id="prof-id"></span></div>
+      <div id="prof-status" style="font-size:13px;margin-bottom:10px"></div>
+      <div id="prof-bio" style="font-size:14px;color:var(--text2);margin-bottom:14px"></div>
+      <button class="btn" id="btn-prof-write" type="button">Написать</button>
+    </div>
   </div>
 </div>
 
@@ -287,10 +343,15 @@ input:focus,textarea:focus{border-color:var(--accent)}
 
 <div class="modal" id="modal-msg">
   <div class="modal-box">
-    <h3>Удалить сообщение?</h3>
-    <div id="msg-text" style="background:var(--bg2);padding:12px;border-radius:10px;font-size:14px;color:var(--text2);margin-bottom:10px;word-wrap:break-word"></div>
-    <button class="btn danger" style="width:100%" id="btn-msg-delete" type="button">🗑️ Удалить</button>
-    <div class="modal-actions"><button class="btn ghost" id="btn-msg-cancel" type="button">Закрыть</button></div>
+    <h3>Сообщение</h3>
+    <div id="msg-text" style="background:var(--bg2);padding:12px;border-radius:10px;font-size:14px;color:var(--text2);margin-bottom:12px;word-wrap:break-word"></div>
+    <div class="react-pick" id="react-pick"></div>
+    <div class="modal-actions" style="flex-direction:column">
+      <button class="btn ghost" id="btn-msg-reply" type="button">↩ Ответить</button>
+      <button class="btn ghost" id="btn-msg-edit" type="button" style="display:none">✏️ Изменить</button>
+      <button class="btn danger" id="btn-msg-delete" type="button">🗑️ Удалить</button>
+      <button class="btn ghost" id="btn-msg-cancel" type="button">Закрыть</button>
+    </div>
   </div>
 </div>
 
@@ -335,6 +396,10 @@ var SHOP = [];
 var currentChat = null;
 var currentGroup = null;
 var pollTimer = null;
+var replyTo = null;
+var pendingDeleteIdx = null;
+var pendingEditIdx = null;
+var pendingReplyIdx = null;
 
 function api(path, opts){
   opts = opts || {};
@@ -443,9 +508,11 @@ function renderChats(){
       var el = document.createElement('div');
       el.className = 'chat-item';
       var avInner = u.avatar ? u.avatar : it.nick[0].toUpperCase();
+      var avClass = u.isBot ? 'bot' : (u.isAdmin ? 'admin' : (u.banned ? 'banned' : ''));
+      var statusIcon = u.status === 'away' ? '🟡' : (u.status === 'dnd' ? '🔴' : '🟢');
       el.innerHTML =
-        '<div class="av '+(u.isAdmin?'admin':'')+(u.banned?' banned':'')+'" style="'+(u.color?'background:'+u.color:'')+'">'+esc(avInner)+'</div>'+
-        '<div class="chat-meta"><div class="name" style="'+(u.color?'color:'+u.color:'')+'">'+esc(it.nick)+(u.isAdmin?' <span class="badge-admin">админ</span>':'')+(u.banned?' <span class="badge-ban">бан</span>':'')+(u.badge?' <span>'+u.badge+'</span>':'')+'</div><div class="last">Личный чат</div></div>';
+        '<div class="av '+avClass+'" style="'+(u.color?'background:'+u.color:'')+'">'+esc(avInner)+'</div>'+
+        '<div class="chat-meta"><div class="name" style="'+(u.color?'color:'+u.color:'')+'">'+esc(it.nick)+(u.isBot?' <span class="badge-bot">бот</span>':'')+(u.isAdmin?' <span class="badge-admin">админ</span>':'')+(u.banned?' <span class="badge-ban">бан</span>':'')+(u.badge?' <span>'+u.badge+'</span>':'')+' <span class="badge-status">'+statusIcon+'</span></div><div class="last">'+(u.bio ? esc(u.bio) : 'Личный чат')+'</div></div>';
       el.addEventListener('click', (function(n){return function(){openPrivate(n);};})(it.nick));
       list.appendChild(el);
     } else {
@@ -464,13 +531,15 @@ function renderChats(){
 function openPrivate(nick){
   currentChat = nick;
   currentGroup = null;
+  replyTo = null;
   var u = USERS[nick] || { nick:nick, id:'', isAdmin:false };
   var avInner = u.avatar ? u.avatar : nick[0].toUpperCase();
-  $('cv-name').innerHTML = '<span style="'+(u.color?'color:'+u.color:'')+'">'+esc(nick)+'</span>'+(u.isAdmin?' <span class="badge-admin">админ</span>':'')+(u.banned?' <span class="badge-ban">бан</span>':'')+(u.badge?' '+u.badge:'');
+  var avClass = u.isBot ? 'bot' : (u.isAdmin ? 'admin' : (u.banned ? 'banned' : ''));
+  $('cv-name').innerHTML = '<span style="'+(u.color?'color:'+u.color:'')+'">'+esc(nick)+'</span>'+(u.isBot?' <span class="badge-bot">бот</span>':'')+(u.isAdmin?' <span class="badge-admin">админ</span>':'')+(u.banned?' <span class="badge-ban">бан</span>':'')+(u.badge?' '+u.badge:'');
   $('cv-sub').textContent = 'ID: ' + (u.id || '—');
   var av = $('cv-av');
   av.textContent = avInner;
-  av.className = 'av ' + (u.isAdmin?'admin':'') + (u.banned?' banned':'');
+  av.className = 'av ' + avClass;
   av.style.background = u.color || '';
   show('scr-chat');
   refreshMsgs();
@@ -478,6 +547,7 @@ function openPrivate(nick){
 function openGroup(gid){
   currentGroup = gid;
   currentChat = null;
+  replyTo = null;
   var g = GROUPS[gid];
   $('cv-name').innerHTML = esc(g.name) + ' <span class="badge-group">группа</span>';
   $('cv-sub').textContent = g.members.length + ' участник(ов)';
@@ -508,7 +578,6 @@ function renderMsgs(msgs){
     return;
   }
   var isGroup = !!currentGroup;
-  var canDelete = ME && ME.isAdmin;
   box.innerHTML = '';
   msgs.forEach(function(m, idx){
     var d = document.createElement('div');
@@ -521,63 +590,152 @@ function renderMsgs(msgs){
       var ac = au && au.color ? au.color : 'var(--accent)';
       authorHtml = '<div class="author" style="color:'+ac+'">'+esc(m.from)+'</div>';
     }
-    d.innerHTML = authorHtml + esc(m.text) + '<div class="time">'+time+'</div>';
-    if(canDelete){
-      d.classList.add('can-delete');
-      var delBtn = document.createElement('button');
-      delBtn.className = 'del-btn';
-      delBtn.type = 'button';
-      delBtn.textContent = '✕';
-      delBtn.addEventListener('click', (function(i){return function(e){
-        e.stopPropagation();
-        pendingDeleteIdx = i;
-        $('msg-text').textContent = msgs[i].from + ': ' + msgs[i].text;
-        $('modal-msg').classList.add('active');
-      };})(idx));
-      d.appendChild(delBtn);
+    var replyHtml = '';
+    if(m.replyTo){
+      replyHtml = '<div class="reply-quote">'+esc(m.replyTo.from)+': '+esc(m.replyTo.text.slice(0,60))+'</div>';
     }
+    var editMark = m.edited ? ' (изм.)' : '';
+    d.innerHTML = authorHtml + replyHtml + esc(m.text) + '<div class="time">'+time+editMark+'</div>';
+
+    // Реакции
+    if(m.reactions && Object.keys(m.reactions).length > 0){
+      var rx = document.createElement('div');
+      rx.className = 'reactions';
+      Object.keys(m.reactions).forEach(function(emo){
+        var count = m.reactions[emo].length;
+        var sp = document.createElement('span');
+        sp.textContent = emo + ' ' + count;
+        sp.addEventListener('click', (function(i,e){return function(ev){
+          ev.stopPropagation();
+          toggleReact(i, e);
+        };})(idx, emo));
+        rx.appendChild(sp);
+      });
+      d.appendChild(rx);
+    }
+
+    // Меню по долгому тапу / клику
+    d.addEventListener('click', function(e){
+      if(e.target.classList.contains('del-btn')) return;
+      if(e.target.tagName === 'SPAN' && e.target.parentElement.classList.contains('reactions')) return;
+      openMsgMenu(idx);
+    });
+
     box.appendChild(d);
   });
   box.scrollTop = box.scrollHeight;
 }
 
-function sendMsg(){
-  var txt = $('in-msg').value.trim();
-  if(!txt) return;
-  var body = { text: txt };
-  if(currentGroup) body.gid = currentGroup;
-  else if(currentChat) body.to = currentChat;
-  else return;
-  api('/send', { method:'POST', body: body }).then(function(res){
-    if(res.error){ toast(res.error); return; }
-    $('in-msg').value='';
+function toggleReact(idx, emoji){
+  var key = currentGroup ? 'gid' : 'withNick';
+  var val = currentGroup || currentChat;
+  var body = { idx: idx, emoji: emoji };
+  if(currentGroup) body.gid = val; else body.withNick = val;
+  api('/msg/react', { method:'POST', body: body }).then(function(){
     lastMsgsJson = '';
     refreshMsgs();
   });
 }
-$('btn-send').addEventListener('click', sendMsg);
-$('in-msg').addEventListener('keydown', function(e){ if(e.key==='Enter') sendMsg(); });
-$('btn-back').addEventListener('click', function(){ show('scr-list'); currentChat=null; currentGroup=null; renderChats(); });
 
-var pendingDeleteIdx = null;
-$('btn-msg-cancel').addEventListener('click', function(){
-  pendingDeleteIdx = null;
-  $('modal-msg').classList.remove('active');
-});
+function openMsgMenu(idx){
+  var key = currentGroup ? 'gid' : 'withNick';
+  var val = currentGroup || currentChat;
+  var q = currentGroup ? ('?gid=' + encodeURIComponent(val)) : ('?withNick=' + encodeURIComponent(val));
+  api('/messages' + q).then(function(res){
+    if(!res || !res.msgs || !res.msgs[idx]) return;
+    var m = res.msgs[idx];
+    pendingDeleteIdx = idx;
+    pendingEditIdx = (m.from === ME.nick) ? idx : null;
+    pendingReplyIdx = idx;
+    $('msg-text').textContent = m.from + ': ' + m.text;
+    $('btn-msg-edit').style.display = (m.from === ME.nick) ? 'block' : 'none';
+    $('modal-msg').classList.add('active');
+  });
+}
+
+function renderReactPick(){
+  var box = $('react-pick');
+  if(box.children.length > 0) return;
+  ['❤️','😂','👍','🔥','😢','😡'].forEach(function(e){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = e;
+    b.addEventListener('click', function(){
+      if(pendingDeleteIdx === null) return;
+      toggleReact(pendingDeleteIdx, e);
+      $('modal-msg').classList.remove('active');
+    });
+    box.appendChild(b);
+  });
+}
+renderReactPick();
+
+$('btn-msg-cancel').addEventListener('click', function(){ $('modal-msg').classList.remove('active'); });
 $('btn-msg-delete').addEventListener('click', function(){
   if(pendingDeleteIdx === null) return;
   var body = { idx: pendingDeleteIdx };
-  if(currentGroup) body.gid = currentGroup;
-  else body.withNick = currentChat;
+  if(currentGroup) body.gid = currentGroup; else body.withNick = currentChat;
   api('/msg/delete', { method:'POST', body: body }).then(function(res){
     if(res.error){ toast(res.error); return; }
-    pendingDeleteIdx = null;
     $('modal-msg').classList.remove('active');
     lastMsgsJson = '';
     refreshMsgs();
     toast('🗑️ Удалено');
   });
 });
+$('btn-msg-edit').addEventListener('click', function(){
+  if(pendingEditIdx === null) return;
+  $('modal-msg').classList.remove('active');
+  var q = currentGroup ? ('?gid=' + encodeURIComponent(currentGroup)) : ('?withNick=' + encodeURIComponent(currentChat));
+  api('/messages' + q).then(function(res){
+    if(!res || !res.msgs || !res.msgs[pendingEditIdx]) return;
+    var oldText = res.msgs[pendingEditIdx].text;
+    var newText = prompt('Изменить сообщение:', oldText);
+    if(newText === null || newText === oldText) return;
+    if(!newText.trim()){ toast('Пусто'); return; }
+    var body = { idx: pendingEditIdx, text: newText.trim() };
+    if(currentGroup) body.gid = currentGroup; else body.withNick = currentChat;
+    api('/msg/edit', { method:'POST', body: body }).then(function(r){
+      if(r.error){ toast(r.error); return; }
+      lastMsgsJson = '';
+      refreshMsgs();
+      toast('✏️ Изменено');
+    });
+  });
+});
+$('btn-msg-reply').addEventListener('click', function(){
+  if(pendingReplyIdx === null) return;
+  var q = currentGroup ? ('?gid=' + encodeURIComponent(currentGroup)) : ('?withNick=' + encodeURIComponent(currentChat));
+  api('/messages' + q).then(function(res){
+    if(!res || !res.msgs || !res.msgs[pendingReplyIdx]) return;
+    var m = res.msgs[pendingReplyIdx];
+    replyTo = { from: m.from, text: m.text };
+    $('modal-msg').classList.remove('active');
+    $('in-msg').placeholder = 'Ответ ' + m.from + ': ' + m.text.slice(0,30);
+    $('in-msg').focus();
+  });
+});
+
+function sendMsg(){
+  var txt = $('in-msg').value.trim();
+  if(!txt) return;
+  var body = { text: txt };
+  if(replyTo) body.replyTo = replyTo;
+  if(currentGroup) body.gid = currentGroup;
+  else if(currentChat) body.to = currentChat;
+  else return;
+  api('/send', { method:'POST', body: body }).then(function(res){
+    if(res.error){ toast(res.error); return; }
+    $('in-msg').value='';
+    $('in-msg').placeholder = 'Сообщение...';
+    replyTo = null;
+    lastMsgsJson = '';
+    refreshMsgs();
+  });
+}
+$('btn-send').addEventListener('click', sendMsg);
+$('in-msg').addEventListener('keydown', function(e){ if(e.key==='Enter') sendMsg(); });
+$('btn-back').addEventListener('click', function(){ show('scr-list'); currentChat=null; currentGroup=null; replyTo=null; renderChats(); });
 
 var EMOJIS = ['😀','😁','😂','🤣','😊','😍','🥰','😎','🤔','😴','😢','😭','😡','🥳','🤯','😱','🤗','😇','🤩','🙃','😉','😋','🤤','🥶','🥵','🤒','🤠','🤡','👻','💀','👽','🤖','🎃','😺','😸','😻','🙀','😿','😾',
 '👍','👎','👏','🙏','💪','🤝','✌️','🤞','🤟','👋','🖐️','✋','👌','🤙','💅','🫶','❤️','🧡','💛','💚','💙','💜','🖤','🤍','💔','❤️‍🔥','💕','💞','💓','💗','💖','💘','💝',
@@ -631,7 +789,7 @@ $('btn-group-cancel').addEventListener('click', function(){ $('modal-group').cla
 
 function renderGroupUsers(){
   var box = $('group-users');
-  var others = Object.keys(USERS).filter(function(n){return n !== ME.nick;});
+  var others = Object.keys(USERS).filter(function(n){return n !== ME.nick && !USERS[n].isBot;});
   if(others.length === 0){
     box.innerHTML = '<div class="empty" style="padding:20px">Нет других юзеров</div>';
     return;
@@ -642,7 +800,7 @@ function renderGroupUsers(){
     var el = document.createElement('div');
     el.className = 'user-pick' + (groupSelected[nick]?' selected':'');
     var avInner = u.avatar ? u.avatar : nick[0].toUpperCase();
-    el.innerHTML = '<div class="av '+(u.isAdmin?'admin':'')+(u.banned?' banned':'')+'" style="'+(u.color?'background:'+u.color:'')+'">'+esc(avInner)+'</div>'+
+    el.innerHTML = '<div class="av '+(u.isAdmin?'admin':'')+'" style="'+(u.color?'background:'+u.color:'')+'">'+esc(avInner)+'</div>'+
       '<div class="n" style="'+(u.color?'color:'+u.color:'')+'">'+esc(nick)+'</div>'+
       (groupSelected[nick]?'<div class="check">✓</div>':'');
     el.addEventListener('click', function(){
@@ -683,30 +841,64 @@ function renderSettings(){
   $('st-badge').textContent = ME.badge || 'нет';
   $('st-avatar').textContent = ME.avatar || 'по умолчанию';
   $('sw-theme').classList.toggle('on', document.body.classList.contains('dark'));
-  $('sw-push').classList.toggle('on', Notification && Notification.permission === 'granted');
+  $('sw-push').classList.toggle('on', ('Notification' in window) && Notification.permission === 'granted');
+  $('sel-status').value = ME.status || 'online';
+  $('in-bio').value = ME.bio || '';
 
   var pc = $('my-purchases');
   pc.innerHTML = '';
   if(!ME.purchases || ME.purchases.length === 0){
     pc.innerHTML = '<div style="font-size:13px;color:var(--text2)">Пока ничего не куплено</div>';
-    return;
-  }
-  ME.purchases.forEach(function(pid){
-    var item = SHOP.find(function(s){return s.id===pid;});
-    if(!item) return;
-    var row = document.createElement('div');
-    row.className = 'row';
-    row.innerHTML = '<span>'+esc(item.title)+'</span><button class="btn ghost small" type="button">Снять</button>';
-    row.querySelector('button').addEventListener('click', function(){
-      api('/shop/remove', { method:'POST', body:{ id: item.id } }).then(function(res){
-        if(res.error){ toast(res.error); return; }
-        ME = res.user;
-        applyTheme(); renderSettings();
-        toast('Эффект снят');
+  } else {
+    ME.purchases.forEach(function(pid){
+      var item = SHOP.find(function(s){return s.id===pid;});
+      if(!item) return;
+      var row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = '<span>'+esc(item.title)+'</span><button class="btn ghost small" type="button">Снять</button>';
+      row.querySelector('button').addEventListener('click', function(){
+        api('/shop/unequip', { method:'POST', body:{ id: item.id } }).then(function(res){
+          if(res.error){ toast(res.error); return; }
+          ME = res.user;
+          applyTheme(); renderSettings();
+          toast('Снято');
+        });
       });
+      pc.appendChild(row);
     });
-    pc.appendChild(row);
-  });
+  }
+
+  var rc = $('my-removed');
+  rc.innerHTML = '';
+  if(!ME.removedItems || ME.removedItems.length === 0){
+    rc.innerHTML = '<div style="font-size:13px;color:var(--text2)">Тут пусто</div>';
+  } else {
+    ME.removedItems.forEach(function(pid){
+      var item = SHOP.find(function(s){return s.id===pid;});
+      if(!item) return;
+      var row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = '<span>'+esc(item.title)+'</span><div style="display:flex;gap:6px"><button class="btn small" data-act="wear" type="button">Одеть</button><button class="btn danger small" data-act="del" type="button">Удалить</button></div>';
+      row.querySelector('[data-act="wear"]').addEventListener('click', function(){
+        api('/shop/re-equip', { method:'POST', body:{ id: item.id } }).then(function(res){
+          if(res.error){ toast(res.error); return; }
+          ME = res.user;
+          applyTheme(); renderSettings();
+          toast('✅ Одето');
+        });
+      });
+      row.querySelector('[data-act="del"]').addEventListener('click', function(){
+        if(!confirm('Удалить навсегда?')) return;
+        api('/shop/forget', { method:'POST', body:{ id: item.id } }).then(function(res){
+          if(res.error){ toast(res.error); return; }
+          ME = res.user;
+          renderSettings();
+          toast('🗑️ Удалено');
+        });
+      });
+      rc.appendChild(row);
+    });
+  }
 }
 
 $('sw-theme').addEventListener('click', function(){
@@ -715,27 +907,26 @@ $('sw-theme').addEventListener('click', function(){
   $('sw-theme').classList.toggle('on');
 });
 
+$('sel-status').addEventListener('change', function(){
+  api('/me/update', { method:'POST', body:{ status: $('sel-status').value } }).then(function(res){
+    if(res.user) ME = res.user;
+    toast('Статус обновлён');
+  });
+});
+$('btn-save-bio').addEventListener('click', function(){
+  api('/me/update', { method:'POST', body:{ bio: $('in-bio').value } }).then(function(res){
+    if(res.error){ toast(res.error); return; }
+    ME = res.user;
+    toast('✅ Сохранено');
+  });
+});
+
 $('sw-push').addEventListener('click', function(){
-  if(!('Notification' in window)){
-    toast('Браузер не поддерживает уведомления');
-    return;
-  }
-  if(Notification.permission === 'granted'){
-    toast('Уведомления уже включены');
-    return;
-  }
-  if(Notification.permission === 'denied'){
-    toast('Уведомления запрещены в настройках браузера');
-    return;
-  }
+  if(!('Notification' in window)){ toast('Браузер не поддерживает'); return; }
+  if(Notification.permission === 'granted'){ toast('Уже включено'); return; }
   Notification.requestPermission().then(function(p){
-    if(p === 'granted'){
-      $('sw-push').classList.add('on');
-      toast('✅ Уведомления включены');
-      subscribePush();
-    } else {
-      toast('Уведомления не разрешены');
-    }
+    if(p === 'granted'){ $('sw-push').classList.add('on'); toast('✅ Включено'); subscribePush(); }
+    else toast('Не разрешено');
   });
 });
 
@@ -747,7 +938,6 @@ function urlBase64ToUint8Array(base64String){
   for (var i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
   return outputArray;
 }
-
 function subscribePush(){
   if(!('serviceWorker' in navigator) || !('PushManager' in window)) return;
   navigator.serviceWorker.register('/sw.js').then(function(reg){
@@ -757,8 +947,6 @@ function subscribePush(){
     });
   }).then(function(sub){
     return api('/push/subscribe', { method:'POST', body:{ sub: sub.toJSON() } });
-  }).then(function(){
-    console.log('push subscribed');
   }).catch(function(e){ console.log('push err', e.message); });
 }
 
@@ -770,6 +958,31 @@ $('btn-logout').addEventListener('click', function(){
   show('scr-auth');
 });
 
+// Профиль
+$('cv-info').addEventListener('click', function(){
+  if(!currentChat) return;
+  openProfile(currentChat);
+});
+function openProfile(nick){
+  var u = USERS[nick];
+  if(!u) return;
+  var avInner = u.avatar ? u.avatar : nick[0].toUpperCase();
+  $('prof-av').textContent = avInner;
+  $('prof-av').style.background = u.color || '';
+  $('prof-av').className = 'av ' + (u.isBot?'bot':(u.isAdmin?'admin':''));
+  $('prof-nick').innerHTML = '<span style="'+(u.color?'color:'+u.color:'')+'">'+esc(nick)+'</span>'+(u.badge?' '+u.badge:'');
+  $('prof-id').textContent = u.id;
+  var st = u.status === 'away' ? '🟡 Отошёл' : (u.status === 'dnd' ? '🔴 Не беспокоить' : '🟢 В сети');
+  $('prof-status').textContent = st;
+  $('prof-bio').textContent = u.bio || 'Нет описания';
+  $('btn-prof-write').onclick = function(){
+    openPrivate(nick);
+  };
+  show('scr-profile');
+}
+$('btn-back-prof').addEventListener('click', function(){ show('scr-chat'); });
+
+// АДМИН
 $('btn-devc').addEventListener('click', function(){
   var code = $('in-devc').value;
   api('/dev/check', { method:'POST', body:{ code:code } }).then(function(res){
@@ -786,6 +999,7 @@ function renderAdmin(){
   usersBox.innerHTML = '';
   Object.keys(USERS).forEach(function(nick){
     var u = USERS[nick];
+    if(u.isBot) return;
     var el = document.createElement('div');
     el.className = 'user-pick';
     el.innerHTML = '<div class="av '+(u.isAdmin?'admin':'')+'" style="'+(u.color?'background:'+u.color:'')+'">'+nick[0].toUpperCase()+'</div>'+
@@ -807,6 +1021,7 @@ function renderAdmin(){
   allBox.innerHTML = '';
   Object.keys(USERS).forEach(function(nick){
     var u = USERS[nick];
+    if(u.isBot) return;
     var el = document.createElement('div');
     el.className = 'row';
     el.innerHTML = '<div style="flex:1"><b style="'+(u.color?'color:'+u.color:'')+'">'+esc(nick)+'</b>'+(u.isAdmin?' <span class="badge-admin">админ</span>':'')+(u.banned?' <span class="badge-ban">бан</span>':'')+
@@ -843,8 +1058,7 @@ $('sw-admin-tag').addEventListener('click', function(){
   if(!ME) return;
   api('/admin/set-admin', { method:'POST', body:{ nick: ME.nick, isAdmin: !ME.isAdmin } }).then(function(res){
     if(res.error){ toast(res.error); return; }
-    ME = res.user;
-    loadUsers().then(renderAdmin);
+    ME = res.user; loadUsers().then(renderAdmin);
   });
 });
 $('sw-admin-red').addEventListener('click', function(){
@@ -852,27 +1066,44 @@ $('sw-admin-red').addEventListener('click', function(){
   var wantRed = ME.color !== '#ff2b2b';
   api('/admin/set-admin', { method:'POST', body:{ nick: ME.nick, colorRed: wantRed } }).then(function(res){
     if(res.error){ toast(res.error); return; }
-    ME = res.user;
-    loadUsers().then(renderAdmin);
+    ME = res.user; loadUsers().then(renderAdmin);
   });
 });
 $('btn-self-coins').addEventListener('click', function(){
   var v = parseInt($('in-self-coins').value) || 0;
   api('/admin/coins', { method:'POST', body:{ nick: ME.nick, amount: v } }).then(function(res){
     if(res.error){ toast(res.error); return; }
-    ME = res.user;
-    toast('+'+v+' W');
-    loadUsers().then(renderAdmin);
+    ME = res.user; toast('+'+v+' W'); loadUsers().then(renderAdmin);
   });
 });
 $('btn-ban-cancel').addEventListener('click', function(){ $('modal-ban').classList.remove('active'); });
 
-$('btn-wipe').addEventListener('click', function(){
-  if(!confirm('Точно стереть ВСЮ базу?')) return;
-  api('/admin/wipe', { method:'POST' }).then(function(res){
+$('btn-broadcast').addEventListener('click', function(){
+  var txt = $('in-broadcast').value.trim();
+  if(!txt){ toast('Пусто'); return; }
+  if(!confirm('Отправить всем?')) return;
+  api('/admin/broadcast', { method:'POST', body:{ text: txt } }).then(function(res){
     if(res.error){ toast(res.error); return; }
-    toast('База очищена');
-    setTimeout(function(){ location.reload(); }, 1000);
+    $('in-broadcast').value='';
+    toast('📢 Отправлено '+res.count+' юзерам');
+  });
+});
+$('btn-coins-add-all').addEventListener('click', function(){
+  var v = parseInt($('in-all-coins').value) || 0;
+  if(!confirm('Выдать всем по '+v+' W?')) return;
+  api('/admin/coins-all', { method:'POST', body:{ amount: v } }).then(function(res){
+    if(res.error){ toast(res.error); return; }
+    toast('✅ Выдано всем');
+    loadUsers().then(renderAdmin);
+  });
+});
+$('btn-coins-sub-all').addEventListener('click', function(){
+  var v = parseInt($('in-all-coins').value) || 0;
+  if(!confirm('Забрать у всех по '+v+' W?')) return;
+  api('/admin/coins-all', { method:'POST', body:{ amount: -v } }).then(function(res){
+    if(res.error){ toast(res.error); return; }
+    toast('✅ Забрано у всех');
+    loadUsers().then(renderAdmin);
   });
 });
 
@@ -885,15 +1116,18 @@ function renderShop(){
   box.innerHTML = '';
   SHOP.forEach(function(item){
     var owned = (ME.purchases||[]).indexOf(item.id) !== -1;
+    var removed = (ME.removedItems||[]).indexOf(item.id) !== -1;
     var el = document.createElement('div');
     el.className = 'shop-item';
     var prevContent = item.badge || item.avatar || (item.color ? 'A' : '★');
     var prevBg = item.color || (item.theme==='gold'?'#ffb800':item.theme==='neon'?'#a855f7':'#666');
+    var status = owned ? '<span style="color:var(--accent);font-weight:700;font-size:13px">✓ куплено</span>'
+                  : removed ? '<span style="color:var(--text2);font-weight:700;font-size:13px">📦 в снятых</span>'
+                  : '<button class="btn small" type="button">'+item.price+' W</button>';
     el.innerHTML = '<div class="prev" style="background:'+prevBg+'">'+prevContent+'</div>'+
       '<div class="txt"><div class="ttl">'+item.title+'</div><div class="desc">'+(item.desc||'')+'</div></div>'+
-      (owned ? '<span style="color:var(--accent);font-weight:700;font-size:13px">✓ куплено</span>'
-             : '<button class="btn small" type="button">'+item.price+' W</button>');
-    if(!owned){
+      status;
+    if(!owned && !removed){
       el.querySelector('button').addEventListener('click', function(){
         api('/shop/buy', { method:'POST', body:{ id:item.id } }).then(function(res){
           if(res.error){ toast(res.error); return; }
@@ -908,18 +1142,10 @@ function renderShop(){
 }
 
 $('btn-chat-menu').addEventListener('click', function(){
-  if(!ME || !ME.isAdmin){ toast('Меню только для админа'); return; }
-  toast('Тапни ✕ на сообщении для удаления');
+  toast('Тапни на сообщение — откроется меню');
 });
 
 (function(){
-  var style = document.createElement('style');
-  style.textContent = 'body.theme-gold{--accent:#ffb800;--accent2:#cc9400}'+
-    'body.theme-neon{--accent:#a855f7;--accent2:#8b3fe0}';
-  document.head.appendChild(style);
-})();
-
-(function init(){
   var theme = localStorage.getItem('wc_theme');
   if(theme === 'dark' || (!theme && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches)){
     document.body.classList.add('dark');

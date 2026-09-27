@@ -11,7 +11,7 @@
   --accent:#4a7dff; --accent2:#3566e0;
   --bubble-me:#4a7dff; --bubble-me-text:#fff;
   --bubble-you:#e8eaed; --bubble-you-text:#111;
-  --danger:#ff4d4d; --admin:#ff2b2b; --group:#22c55e;
+  --danger:#ff4d4d; --admin:#ff2b2b; --group:#22c55e; --channel:#f59e0b;
 }
 body.dark{
   --bg:#0f1216; --bg2:#171a1f; --bg3:#22262d;
@@ -56,6 +56,7 @@ input:focus,textarea:focus{border-color:var(--accent)}
 .av.admin{background:linear-gradient(135deg,#ff2b2b,#a30000)}
 .av.bot{background:linear-gradient(135deg,#a855f7,#7c3aed)}
 .av.group{background:linear-gradient(135deg,#22c55e,#15803d)}
+.av.channel{background:linear-gradient(135deg,#f59e0b,#d97706)}
 .av.banned{filter:grayscale(1);opacity:.55}
 .chat-meta{flex:1;min-width:0}
 .chat-meta .name{font-weight:600;font-size:15px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -63,6 +64,7 @@ input:focus,textarea:focus{border-color:var(--accent)}
 .badge-admin{background:var(--admin);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-transform:uppercase}
 .badge-bot{background:#a855f7;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-transform:uppercase}
 .badge-group{background:var(--group);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-transform:uppercase}
+.badge-channel{background:var(--channel);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-transform:uppercase}
 .badge-ban{background:#444;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;text-transform:uppercase}
 .badge-status{font-size:10px;padding:2px 6px;border-radius:6px;background:var(--bg3);color:var(--text2)}
 .chat-hdr{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
@@ -78,8 +80,6 @@ input:focus,textarea:focus{border-color:var(--accent)}
 .bubble .reply-quote{background:rgba(0,0,0,.15);border-left:3px solid var(--accent);padding:4px 8px;border-radius:6px;font-size:12px;opacity:.85;margin-bottom:4px}
 .bubble.emoji-only{background:transparent!important;font-size:38px;padding:2px 6px;line-height:1}
 .bubble.emoji-only .time{font-size:9px;color:var(--text2);opacity:.7}
-.bubble .del-btn{position:absolute;top:-8px;right:-8px;background:var(--danger);color:#fff;border-radius:50%;width:24px;height:24px;font-size:12px;display:none;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3);z-index:5}
-.bubble.can-delete .del-btn{display:flex}
 .bubble .reactions{display:flex;gap:3px;flex-wrap:wrap;margin-top:5px}
 .bubble .reactions span{background:rgba(255,255,255,.25);border-radius:10px;padding:2px 7px;font-size:12px;cursor:pointer}
 .bubble.you .reactions span{background:rgba(0,0,0,.1)}
@@ -124,7 +124,6 @@ input:focus,textarea:focus{border-color:var(--accent)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .empty{text-align:center;color:var(--text2);padding:40px 20px;font-size:14px;line-height:1.5}
 @media(min-width:700px){
-  body{background:var(--bg)}
   .auth-wrap{max-width:480px;padding:40px 24px}
   .hdr{padding:16px 32px}
   .hdr h1{font-size:22px}
@@ -161,10 +160,11 @@ input:focus,textarea:focus{border-color:var(--accent)}
 <div class="screen" id="scr-list">
   <div class="hdr">
     <h1>Wenchat</h1>
-    <button class="icon-btn" id="btn-search" type="button">🔍</button>
-    <button class="icon-btn" id="btn-newgroup" type="button">👥</button>
-    <button class="icon-btn" id="btn-shop" type="button">🛒</button>
-    <button class="icon-btn" id="btn-settings" type="button">⚙️</button>
+    <button class="icon-btn" id="btn-search" type="button" title="Найти пользователя">🔍</button>
+    <button class="icon-btn" id="btn-search-channel" type="button" title="Найти канал">📺</button>
+    <button class="icon-btn" id="btn-newgroup" type="button" title="Группа">👥</button>
+    <button class="icon-btn" id="btn-shop" type="button" title="Wenshop">🛒</button>
+    <button class="icon-btn" id="btn-settings" type="button" title="Настройки">⚙️</button>
   </div>
   <div class="list" id="chat-list"></div>
 </div>
@@ -260,6 +260,13 @@ input:focus,textarea:focus{border-color:var(--accent)}
       </div>
     </div>
     <div class="card">
+      <h3>📺 Создать канал</h3>
+      <p style="font-size:12px;color:var(--text2);margin:0 0 8px">Пишет только владелец, остальные читают</p>
+      <input id="in-channel-name" placeholder="Название канала" maxlength="40" style="margin-bottom:8px">
+      <input id="in-channel-desc" placeholder="Описание (необязательно)" maxlength="200" style="margin-bottom:8px">
+      <button class="btn" id="btn-create-channel" type="button" style="width:100%">Создать канал</button>
+    </div>
+    <div class="card">
       <h3>📢 Массовая рассылка</h3>
       <p style="font-size:12px;color:var(--text2);margin:0 0 8px">Придёт всем от имени бота</p>
       <input id="in-broadcast" placeholder="Текст сообщения" maxlength="500" style="margin-bottom:8px">
@@ -302,8 +309,8 @@ input:focus,textarea:focus{border-color:var(--accent)}
       <div style="font-size:13px;color:var(--text2);margin-bottom:8px">ID: <span id="prof-id"></span></div>
       <div id="prof-status" style="font-size:13px;margin-bottom:10px"></div>
       <div id="prof-bio" style="font-size:14px;color:var(--text2);margin-bottom:14px"></div>
-            <button class="btn" id="btn-prof-write" type="button">Написать</button>
-      <button class="btn ghost" id="btn-prof-remove" type="button" style="margin-top:8px">❌ Удалить из друзей</button>
+      <button class="btn" id="btn-prof-write" type="button" style="width:100%">Написать</button>
+      <button class="btn ghost" id="btn-prof-remove" type="button" style="width:100%;margin-top:8px">❌ Удалить из друзей</button>
     </div>
   </div>
 </div>
@@ -316,6 +323,18 @@ input:focus,textarea:focus{border-color:var(--accent)}
     <div class="modal-actions">
       <button class="btn ghost" id="btn-search-cancel" type="button">Отмена</button>
       <button class="btn" id="btn-search-go" type="button">Найти</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal-search-channel">
+  <div class="modal-box">
+    <h3>📺 Найти канал по ID</h3>
+    <input id="in-search-ch-id" placeholder="000000" maxlength="6" inputmode="numeric" style="font-family:monospace;font-size:20px;letter-spacing:4px;text-align:center">
+    <div class="err" id="search-ch-err"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="btn-search-ch-cancel" type="button">Отмена</button>
+      <button class="btn" id="btn-search-ch-go" type="button">Подписаться</button>
     </div>
   </div>
 </div>
@@ -393,9 +412,11 @@ var ME = null;
 var TOKEN = localStorage.getItem('wc_token') || null;
 var USERS = {};
 var GROUPS = {};
+var CHANNELS = {};
 var SHOP = [];
 var currentChat = null;
 var currentGroup = null;
+var currentChannel = null;
 var pollTimer = null;
 var replyTo = null;
 var pendingDeleteIdx = null;
@@ -447,6 +468,7 @@ function enterApp(){
   applyTheme();
   loadUsers();
   loadGroups();
+  loadChannels();
   loadShop();
   show('scr-list');
   renderChats();
@@ -456,8 +478,9 @@ function enterApp(){
 function startPolling(){
   if(pollTimer) clearInterval(pollTimer);
   pollTimer = setInterval(function(){
-    if(currentChat || currentGroup) refreshMsgs();
+    if(currentChat || currentGroup || currentChannel) refreshMsgs();
     loadUsers();
+    loadChannels();
   }, 2500);
 }
 
@@ -479,6 +502,13 @@ function loadUsers(){
 function loadGroups(){
   api('/groups').then(function(obj){
     if(obj && typeof obj === 'object') GROUPS = obj;
+    renderChats();
+  });
+}
+function loadChannels(){
+  api('/channels').then(function(obj){
+    if(obj && typeof obj === 'object') CHANNELS = obj;
+    renderChats();
   });
 }
 function loadShop(){
@@ -498,8 +528,11 @@ function renderChats(){
   Object.keys(GROUPS).forEach(function(gid){
     items.push({ type:'group', gid: gid });
   });
+  Object.keys(CHANNELS).forEach(function(cid){
+    items.push({ type:'channel', cid: cid });
+  });
   if(items.length === 0){
-    list.innerHTML = '<div class="empty">Пока пусто.<br><br>🔍 — найди друга по ID<br>👥 — создай группу</div>';
+    list.innerHTML = '<div class="empty">Пока пусто.<br><br>🔍 — найди друга по ID<br>📺 — найди канал по ID<br>👥 — создай группу</div>';
     return;
   }
   list.innerHTML = '';
@@ -516,7 +549,7 @@ function renderChats(){
         '<div class="chat-meta"><div class="name" style="'+(u.color?'color:'+u.color:'')+'">'+esc(it.nick)+(u.isBot?' <span class="badge-bot">бот</span>':'')+(u.isAdmin?' <span class="badge-admin">админ</span>':'')+(u.banned?' <span class="badge-ban">бан</span>':'')+(u.badge?' <span>'+u.badge+'</span>':'')+' <span class="badge-status">'+statusIcon+'</span></div><div class="last">'+(u.bio ? esc(u.bio) : 'Личный чат')+'</div></div>';
       el.addEventListener('click', (function(n){return function(){openPrivate(n);};})(it.nick));
       list.appendChild(el);
-    } else {
+    } else if(it.type === 'group'){
       var g = GROUPS[it.gid];
       var el2 = document.createElement('div');
       el2.className = 'chat-item';
@@ -525,6 +558,15 @@ function renderChats(){
         '<div class="chat-meta"><div class="name">'+esc(g.name)+' <span class="badge-group">группа</span></div><div class="last">'+g.members.length+' участник(ов)</div></div>';
       el2.addEventListener('click', (function(gid){return function(){openGroup(gid);};})(it.gid));
       list.appendChild(el2);
+    } else {
+      var ch = CHANNELS[it.cid];
+      var el3 = document.createElement('div');
+      el3.className = 'chat-item';
+      el3.innerHTML =
+        '<div class="av channel">📺</div>'+
+        '<div class="chat-meta"><div class="name">'+esc(ch.name)+' <span class="badge-channel">канал</span></div><div class="last">ID: '+ch.channelId+' · '+(ch.description ? esc(ch.description) : 'Канал')+'</div></div>';
+      el3.addEventListener('click', (function(cid){return function(){openChannel(cid);};})(it.cid));
+      list.appendChild(el3);
     }
   });
 }
@@ -532,6 +574,7 @@ function renderChats(){
 function openPrivate(nick){
   currentChat = nick;
   currentGroup = null;
+  currentChannel = null;
   replyTo = null;
   var u = USERS[nick] || { nick:nick, id:'', isAdmin:false };
   var avInner = u.avatar ? u.avatar : nick[0].toUpperCase();
@@ -548,6 +591,7 @@ function openPrivate(nick){
 function openGroup(gid){
   currentGroup = gid;
   currentChat = null;
+  currentChannel = null;
   replyTo = null;
   var g = GROUPS[gid];
   $('cv-name').innerHTML = esc(g.name) + ' <span class="badge-group">группа</span>';
@@ -558,11 +602,32 @@ function openGroup(gid){
   show('scr-chat');
   refreshMsgs();
 }
+function openChannel(cid){
+  currentChannel = cid;
+  currentChat = null;
+  currentGroup = null;
+  replyTo = null;
+  var ch = CHANNELS[cid];
+  $('cv-name').innerHTML = esc(ch.name) + ' <span class="badge-channel">канал</span>';
+  $('cv-sub').textContent = 'ID: ' + ch.channelId + ' · Владелец: ' + ch.owner;
+  var av = $('cv-av');
+  av.textContent = '📺';
+  av.className = 'av channel';
+  show('scr-chat');
+  // Скрываем поле ввода, если не владелец и не админ
+  var canWrite = (ch.owner === ME.nick) || ME.isAdmin;
+  $('in-msg').disabled = !canWrite;
+  $('in-msg').placeholder = canWrite ? 'Сообщение...' : 'Только владелец может писать';
+  refreshMsgs();
+}
 
 var lastMsgsJson = '';
 function refreshMsgs(){
-  if(!currentChat && !currentGroup) return;
-  var q = currentGroup ? ('?gid=' + encodeURIComponent(currentGroup)) : ('?withNick=' + encodeURIComponent(currentChat));
+  if(!currentChat && !currentGroup && !currentChannel) return;
+  var q;
+  if(currentChannel) q = '?cid=' + encodeURIComponent(currentChannel);
+  else if(currentGroup) q = '?gid=' + encodeURIComponent(currentGroup);
+  else q = '?withNick=' + encodeURIComponent(currentChat);
   api('/messages' + q).then(function(res){
     if(!res || !res.msgs) return;
     var json = JSON.stringify(res.msgs);
@@ -579,6 +644,7 @@ function renderMsgs(msgs){
     return;
   }
   var isGroup = !!currentGroup;
+  var isChannel = !!currentChannel;
   box.innerHTML = '';
   msgs.forEach(function(m, idx){
     var d = document.createElement('div');
@@ -586,7 +652,7 @@ function renderMsgs(msgs){
     if(isEmojiOnly(m.text)) d.classList.add('emoji-only');
     var time = new Date(m.t).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
     var authorHtml = '';
-    if(isGroup && m.from !== ME.nick){
+    if((isGroup || isChannel) && m.from !== ME.nick){
       var au = USERS[m.from];
       var ac = au && au.color ? au.color : 'var(--accent)';
       authorHtml = '<div class="author" style="color:'+ac+'">'+esc(m.from)+'</div>';
@@ -598,7 +664,6 @@ function renderMsgs(msgs){
     var editMark = m.edited ? ' (изм.)' : '';
     d.innerHTML = authorHtml + replyHtml + esc(m.text) + '<div class="time">'+time+editMark+'</div>';
 
-    // Реакции
     if(m.reactions && Object.keys(m.reactions).length > 0){
       var rx = document.createElement('div');
       rx.className = 'reactions';
@@ -615,9 +680,7 @@ function renderMsgs(msgs){
       d.appendChild(rx);
     }
 
-    // Меню по долгому тапу / клику
     d.addEventListener('click', function(e){
-      if(e.target.classList.contains('del-btn')) return;
       if(e.target.tagName === 'SPAN' && e.target.parentElement.classList.contains('reactions')) return;
       openMsgMenu(idx);
     });
@@ -628,10 +691,10 @@ function renderMsgs(msgs){
 }
 
 function toggleReact(idx, emoji){
-  var key = currentGroup ? 'gid' : 'withNick';
-  var val = currentGroup || currentChat;
   var body = { idx: idx, emoji: emoji };
-  if(currentGroup) body.gid = val; else body.withNick = val;
+  if(currentChannel) body.cid = currentChannel;
+  else if(currentGroup) body.gid = currentGroup;
+  else body.withNick = currentChat;
   api('/msg/react', { method:'POST', body: body }).then(function(){
     lastMsgsJson = '';
     refreshMsgs();
@@ -639,9 +702,10 @@ function toggleReact(idx, emoji){
 }
 
 function openMsgMenu(idx){
-  var key = currentGroup ? 'gid' : 'withNick';
-  var val = currentGroup || currentChat;
-  var q = currentGroup ? ('?gid=' + encodeURIComponent(val)) : ('?withNick=' + encodeURIComponent(val));
+  var q;
+  if(currentChannel) q = '?cid=' + encodeURIComponent(currentChannel);
+  else if(currentGroup) q = '?gid=' + encodeURIComponent(currentGroup);
+  else q = '?withNick=' + encodeURIComponent(currentChat);
   api('/messages' + q).then(function(res){
     if(!res || !res.msgs || !res.msgs[idx]) return;
     var m = res.msgs[idx];
@@ -675,7 +739,9 @@ $('btn-msg-cancel').addEventListener('click', function(){ $('modal-msg').classLi
 $('btn-msg-delete').addEventListener('click', function(){
   if(pendingDeleteIdx === null) return;
   var body = { idx: pendingDeleteIdx };
-  if(currentGroup) body.gid = currentGroup; else body.withNick = currentChat;
+  if(currentChannel) body.cid = currentChannel;
+  else if(currentGroup) body.gid = currentGroup;
+  else body.withNick = currentChat;
   api('/msg/delete', { method:'POST', body: body }).then(function(res){
     if(res.error){ toast(res.error); return; }
     $('modal-msg').classList.remove('active');
@@ -687,7 +753,10 @@ $('btn-msg-delete').addEventListener('click', function(){
 $('btn-msg-edit').addEventListener('click', function(){
   if(pendingEditIdx === null) return;
   $('modal-msg').classList.remove('active');
-  var q = currentGroup ? ('?gid=' + encodeURIComponent(currentGroup)) : ('?withNick=' + encodeURIComponent(currentChat));
+  var q;
+  if(currentChannel) q = '?cid=' + encodeURIComponent(currentChannel);
+  else if(currentGroup) q = '?gid=' + encodeURIComponent(currentGroup);
+  else q = '?withNick=' + encodeURIComponent(currentChat);
   api('/messages' + q).then(function(res){
     if(!res || !res.msgs || !res.msgs[pendingEditIdx]) return;
     var oldText = res.msgs[pendingEditIdx].text;
@@ -695,7 +764,9 @@ $('btn-msg-edit').addEventListener('click', function(){
     if(newText === null || newText === oldText) return;
     if(!newText.trim()){ toast('Пусто'); return; }
     var body = { idx: pendingEditIdx, text: newText.trim() };
-    if(currentGroup) body.gid = currentGroup; else body.withNick = currentChat;
+    if(currentChannel) body.cid = currentChannel;
+    else if(currentGroup) body.gid = currentGroup;
+    else body.withNick = currentChat;
     api('/msg/edit', { method:'POST', body: body }).then(function(r){
       if(r.error){ toast(r.error); return; }
       lastMsgsJson = '';
@@ -706,7 +777,10 @@ $('btn-msg-edit').addEventListener('click', function(){
 });
 $('btn-msg-reply').addEventListener('click', function(){
   if(pendingReplyIdx === null) return;
-  var q = currentGroup ? ('?gid=' + encodeURIComponent(currentGroup)) : ('?withNick=' + encodeURIComponent(currentChat));
+  var q;
+  if(currentChannel) q = '?cid=' + encodeURIComponent(currentChannel);
+  else if(currentGroup) q = '?gid=' + encodeURIComponent(currentGroup);
+  else q = '?withNick=' + encodeURIComponent(currentChat);
   api('/messages' + q).then(function(res){
     if(!res || !res.msgs || !res.msgs[pendingReplyIdx]) return;
     var m = res.msgs[pendingReplyIdx];
@@ -722,7 +796,8 @@ function sendMsg(){
   if(!txt) return;
   var body = { text: txt };
   if(replyTo) body.replyTo = replyTo;
-  if(currentGroup) body.gid = currentGroup;
+  if(currentChannel) body.cid = currentChannel;
+  else if(currentGroup) body.gid = currentGroup;
   else if(currentChat) body.to = currentChat;
   else return;
   api('/send', { method:'POST', body: body }).then(function(res){
@@ -736,7 +811,15 @@ function sendMsg(){
 }
 $('btn-send').addEventListener('click', sendMsg);
 $('in-msg').addEventListener('keydown', function(e){ if(e.key==='Enter') sendMsg(); });
-$('btn-back').addEventListener('click', function(){ show('scr-list'); currentChat=null; currentGroup=null; replyTo=null; renderChats(); });
+$('btn-back').addEventListener('click', function(){
+  show('scr-list');
+  currentChat=null; currentGroup=null; currentChannel=null;
+  replyTo=null;
+  $('in-msg').disabled = false;
+  $('in-msg').placeholder = 'Сообщение...';
+  lastMsgsJson = '';
+  renderChats();
+});
 
 var EMOJIS = ['😀','😁','😂','🤣','😊','😍','🥰','😎','🤔','😴','😢','😭','😡','🥳','🤯','😱','🤗','😇','🤩','🙃','😉','😋','🤤','🥶','🥵','🤒','🤠','🤡','👻','💀','👽','🤖','🎃','😺','😸','😻','🙀','😿','😾',
 '👍','👎','👏','🙏','💪','🤝','✌️','🤞','🤟','👋','🖐️','✋','👌','🤙','💅','🫶','❤️','🧡','💛','💚','💙','💜','🖤','🤍','💔','❤️‍🔥','💕','💞','💓','💗','💖','💘','💝',
@@ -775,6 +858,26 @@ $('btn-search-go').addEventListener('click', function(){
     loadUsers().then(function(){
       renderChats();
       openPrivate(res.user.nick);
+    });
+  });
+});
+
+$('btn-search-channel').addEventListener('click', function(){
+  $('in-search-ch-id').value=''; $('search-ch-err').textContent='';
+  $('modal-search-channel').classList.add('active');
+});
+$('btn-search-ch-cancel').addEventListener('click', function(){ $('modal-search-channel').classList.remove('active'); });
+$('btn-search-ch-go').addEventListener('click', function(){
+  var id = $('in-search-ch-id').value.trim();
+  if(!/^\d{6}$/.test(id)){ $('search-ch-err').textContent='ID из 6 цифр'; return; }
+  api('/channels/find', { method:'POST', body:{ id: id } }).then(function(res){
+    if(res.error){ $('search-ch-err').textContent = res.error; return; }
+    $('modal-search-channel').classList.remove('active');
+    toast('Подписка на «' + res.channel.name + '»');
+    if(res.me) ME = res.me;
+    loadChannels().then(function(){
+      renderChats();
+      openChannel(res.channel.cid);
     });
   });
 });
@@ -959,11 +1062,18 @@ $('btn-logout').addEventListener('click', function(){
   show('scr-auth');
 });
 
-// Профиль
 $('cv-info').addEventListener('click', function(){
+  if(currentChannel){
+    // Инфо о канале
+    var ch = CHANNELS[currentChannel];
+    if(!ch) return;
+    toast('Канал «' + ch.name + '» ID: ' + ch.channelId);
+    return;
+  }
   if(!currentChat) return;
   openProfile(currentChat);
 });
+
 function openProfile(nick){
   var u = USERS[nick];
   if(!u) return;
@@ -976,10 +1086,8 @@ function openProfile(nick){
   var st = u.status === 'away' ? '🟡 Отошёл' : (u.status === 'dnd' ? '🔴 Не беспокоить' : '🟢 В сети');
   $('prof-status').textContent = st;
   $('prof-bio').textContent = u.bio || 'Нет описания';
-  $('btn-prof-write').onclick = function(){
-    openPrivate(nick);
-  };
-    $('btn-prof-remove').onclick = function(){
+  $('btn-prof-write').onclick = function(){ openPrivate(nick); };
+  $('btn-prof-remove').onclick = function(){
     if(!confirm('Удалить ' + nick + ' из друзей?')) return;
     api('/friends/remove', { method:'POST', body:{ nick: nick } }).then(function(res){
       if(res.error){ toast(res.error); return; }
@@ -995,7 +1103,6 @@ function openProfile(nick){
 }
 $('btn-back-prof').addEventListener('click', function(){ show('scr-chat'); });
 
-// АДМИН
 $('btn-devc').addEventListener('click', function(){
   var code = $('in-devc').value;
   api('/dev/check', { method:'POST', body:{ code:code } }).then(function(res){
@@ -1090,6 +1197,22 @@ $('btn-self-coins').addEventListener('click', function(){
   });
 });
 $('btn-ban-cancel').addEventListener('click', function(){ $('modal-ban').classList.remove('active'); });
+
+$('btn-create-channel').addEventListener('click', function(){
+  var name = $('in-channel-name').value.trim();
+  var desc = $('in-channel-desc').value.trim();
+  if(name.length < 2){ toast('Название коротко'); return; }
+  api('/channels/create', { method:'POST', body:{ name: name, description: desc } }).then(function(res){
+    if(res.error){ toast(res.error); return; }
+    $('in-channel-name').value=''; $('in-channel-desc').value='';
+    toast('📺 Канал создан! ID: ' + res.channelId);
+    loadChannels().then(function(){
+      loadUsers();
+      show('scr-list');
+      renderChats();
+    });
+  });
+});
 
 $('btn-broadcast').addEventListener('click', function(){
   var txt = $('in-broadcast').value.trim();

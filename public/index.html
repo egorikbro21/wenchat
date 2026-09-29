@@ -1281,6 +1281,40 @@ $('btn-chat-menu').addEventListener('click', function(){
   toast('Тапни на сообщение — откроется меню');
 });
 
+// ПРОСТЫЕ УВЕДОМЛЕНИЯ (пока вкладка открыта)
+var lastMsgCount = {};
+setInterval(function(){
+  if(!ME) return;
+  var changed = false;
+  (ME.contacts || []).forEach(function(nick){
+    var key = [ME.nick, nick].sort().join('|');
+    api('/messages?withNick=' + encodeURIComponent(nick)).then(function(res){
+      if(!res || !res.msgs) return;
+      var count = res.msgs.length;
+      var prev = lastMsgCount[key] || 0;
+      if(count > prev && prev > 0){
+        var last = res.msgs[res.msgs.length - 1];
+        if(last.from !== ME.nick){
+          if(Notification.permission === 'granted'){
+            new Notification(last.from, {
+              body: last.text.slice(0, 100),
+              icon: '/icon.png',
+              tag: 'wc-' + last.from
+            });
+          }
+        }
+      }
+      lastMsgCount[key] = count;
+    });
+  });
+}, 5000);
+
+// Запрос разрешения
+if('Notification' in window && Notification.permission === 'default'){
+  Notification.requestPermission();
+}
+
+  
 (function(){
   var theme = localStorage.getItem('wc_theme');
   if(theme === 'dark' || (!theme && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches)){

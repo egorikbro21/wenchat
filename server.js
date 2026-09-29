@@ -10,8 +10,8 @@ const DATA_FILE = '/app/data/data.json';
 const AUDIO_DIR = '/app/data/audio';
 try { fs.mkdirSync(AUDIO_DIR, { recursive: true }); } catch(e){}
 
-const VAPID_PUBLIC = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
-const VAPID_PRIVATE = 'UUxI4O8-FbRouAevSmBQ6o3JsRH6n3YnQxWBMHR9HnY';
+const VAPID_PUBLIC = 'BCegcGtbAvwiimgjuzr30SZcnfzrwkYBVM3TeqFZkLQfQ21cS-t3SQmUfNnIe9du-wECrlF4FL-LetLlWivgrpw';
+const VAPID_PRIVATE = 'rzjVf92jmhpXFyhD1wHaHtAfNY-qS56L6Yl3KbPIlmk';
 try { webpush.setVapidDetails('mailto:admin@wenchat.local', VAPID_PUBLIC, VAPID_PRIVATE); } catch(e){}
 
 let DB = {

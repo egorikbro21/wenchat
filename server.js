@@ -51,7 +51,7 @@ function saveDB(){
 }
 loadDB();
 
-const DEV_CODE = "Wendrt-Super-Secret-Dev-Code-2025-Xyz!";
+const DEV_CODE = "Wendrt-Dev-Code-2026-Quantum-X9F7-K3M2-P8V5-L1Q4!";
 const ADMIN_NICK = "Wendrt";
 const BOT_ID = '999999';
 const BOT_NICK = 'Wenbot';

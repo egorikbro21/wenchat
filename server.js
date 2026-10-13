@@ -103,7 +103,7 @@ function ensureBot(){
       color: '#a855f7', badge: '🤖', avatar: '🤖', theme: null,
       banned: false, banReason: null,
       purchases: [], contacts: [], removedItems: [], channels: [],
-      isBot: true, status: 'online', bio: 'Я Wenbot, помогу чем смогу!'
+      isBot: true, status: 'online', bio: 'Я Wenbot, помогу чем смогу! Играй: /game'
     };
     saveDB();
   }
@@ -164,25 +164,22 @@ function deleteFileIfUnused(fileUrl){
 /* ============ ИГРЫ В БОТЕ ============ */
 var GAME_LIST = '🎮 Выбери игру:\n1️⃣ ✊✋✌️ Камень-ножницы-бумага\n2️⃣ 🔢 Угадай число\n3️⃣ ❌⭕ Крестики-нолики\n4️⃣ 🎲 Кости\n5️⃣ 🎯 Мишень\n\nНапиши номер (1-5)';
 
-function startBotGame(nick, gameNum){
+function startBotGame(nick, choice){
   var game = null;
-  if(gameNum === '1' || gameNum === 'кнб') game = 'rps';
-  else if(gameNum === '2' || gameNum === 'угадай') game = 'guess';
-  else if(gameNum === '3' || gameNum === 'крестики') game = 'ttt';
-  else if(gameNum === '4' || gameNum === 'кости') game = 'dice';
-  else if(gameNum === '5' || gameNum === 'мишень') game = 'target';
+  if(choice === '1') game = 'rps';
+  else if(choice === '2') game = 'guess';
+  else if(choice === '3') game = 'ttt';
+  else if(choice === '4') game = 'dice';
+  else if(choice === '5') game = 'target';
   if(!game) return null;
   var state = {};
   if(game === 'ttt') state.board = ['','','','','','','','',''];
-  if(game === 'guess') state.secret = Math.floor(Math.random()*100)+1;
-  if(game === 'guess') state.tries = 0;
-  if(game === 'dice') state.myRoll = null;
-  if(game === 'target') state.myShot = null;
+  if(game === 'guess'){ state.secret = Math.floor(Math.random()*100)+1; state.tries = 0; }
   DB.botGames[nick] = { game: game, state: state, started: Date.now() };
   saveDB();
   if(game === 'rps') return '✊✋✌️ КНБ!\nВыбери: 1=✊, 2=✌️, 3=✋';
   if(game === 'guess') return '🔢 Я загадал число от 1 до 100.\nНапиши своё предположение.';
-  if(game === 'ttt') return '❌⭕ Крестики-нолики!\nТы — ❌, я — ⭕\n\nПоле:\n1️⃣2️⃣3️⃣\n4️⃣5️⃣6️⃣\n7️⃣8️⃣9️⃣\n\nНапиши номер клетки (1-9)';
+  if(game === 'ttt') return '❌⭕ Крестики-нолики!\nТы — ❌, я — ⭕\n\n' + renderTTT(state.board) + '\n\nНапиши номер клетки (1-9)';
   if(game === 'dice') return '🎲 Кости!\nНапиши «бросок» чтобы бросить 2 кубика.';
   if(game === 'target') return '🎯 Мишень!\nВыбери куда стрелять (1-10). Чем ближе к 10 — тем лучше.';
   return null;
@@ -208,7 +205,7 @@ function playBotGame(nick, text){
     else res = '😢 Я выиграл!';
     delete DB.botGames[nick];
     saveDB();
-    return 'Ты '+emoji[pick]+' vs Я '+emoji[bot]+'\n' + res + '\n\nХочешь ещё? /game';
+    return 'Ты '+emoji[pick]+' vs Я '+emoji[bot]+'\n' + res + '\n\nЕщё? /game';
   }
 
   if(bg.game === 'guess'){
@@ -232,7 +229,6 @@ function playBotGame(nick, text){
     var idx = cell - 1;
     if(bg.state.board[idx]) return '⚠️ Клетка занята';
     bg.state.board[idx] = '❌';
-    // Проверка победы игрока
     var w = checkTTT(bg.state.board);
     if(w === '❌'){
       delete DB.botGames[nick];
@@ -244,7 +240,6 @@ function playBotGame(nick, text){
       saveDB();
       return renderTTT(bg.state.board) + '\n\n🤝 Ничья!\n\nЕщё? /game';
     }
-    // Ход бота
     var empty = [];
     bg.state.board.forEach(function(v, i){ if(!v) empty.push(i); });
     var botMove = empty[Math.floor(Math.random()*empty.length)];
@@ -265,7 +260,7 @@ function playBotGame(nick, text){
   }
 
   if(bg.game === 'dice'){
-    if(t !== 'бросок' && t !== 'брос' && t !== 'кинуть') return '🎲 Напиши «бросок» чтобы бросить';
+    if(t !== 'бросок' && t !== 'брос' && t !== 'кинуть' && t !== 'roll' && t !== 'r') return '🎲 Напиши «бросок» чтобы бросить';
     var my1 = Math.floor(Math.random()*6)+1;
     var my2 = Math.floor(Math.random()*6)+1;
     var bot1 = Math.floor(Math.random()*6)+1;
@@ -301,10 +296,7 @@ function playBotGame(nick, text){
 
 function renderTTT(b){
   var e = function(i){ return b[i] || (i+1); };
-  return 'Поле:\n' +
-    e(0)+'|'+e(1)+'|'+e(2)+'\n' +
-    e(3)+'|'+e(4)+'|'+e(5)+'\n' +
-    e(6)+'|'+e(7)+'|'+e(8);
+  return 'Поле:\n' + e(0)+'|'+e(1)+'|'+e(2)+'\n' + e(3)+'|'+e(4)+'|'+e(5)+'\n' + e(6)+'|'+e(7)+'|'+e(8);
 }
 function checkTTT(b){
   var lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
@@ -319,31 +311,36 @@ function checkTTT(b){
 function botReply(text, userNick){
   const t = (text || '').trim(), low = t.toLowerCase();
 
-  // Если игра активна — сначала пробуем игровой ход
+  // 1. Приоритет команд
+  if(low === '/game' || low === '/игра' || low === 'игра' || low === 'игры' || low === 'game' || low === '🎮'){
+    if(DB.botGames[userNick]){ delete DB.botGames[userNick]; saveDB(); }
+    return GAME_LIST;
+  }
+  if(low === '/help' || low === 'помощь' || low === 'help'){
+    if(DB.botGames[userNick]){ delete DB.botGames[userNick]; saveDB(); }
+    return '🤖 Мои команды:\n\n📌 Базовое:\n/help, /ping, /id, /time, /date\n\n🧮 Полезное:\n/calc 2+2, /random 1 100, /coin, /dice, /password 16\n\n🎮 Игры:\n/game — список игр\n\n🌍 Инфо:\n/weather Москва, /wiki Россия\n\n🎉 Приколы:\n/joke, /fact, /quote, /8ball, /love';
+  }
+
+  // 2. Активная игра
   if(DB.botGames[userNick]){
+    // Если пришло /help или /game — уже обработали выше
+    // Если пришло число 1-5 и оно совпадает с новой игрой — не переключаем
     var gameResult = playBotGame(userNick, text);
     if(gameResult) return gameResult;
   }
 
-  // Запуск игры
-  if(low === '/game' || low === '/игра' || low === 'игра' || low === 'игры' || low === 'game' || low === '🎮'){
-    return GAME_LIST;
-  }
-
-  // Выбор игры
-  if(['1','2','3','4','5'].indexOf(low) !== -1 && !DB.botGames[userNick]){
+  // 3. Выбор игры (1-5) — если нет активной
+  if(!DB.botGames[userNick] && ['1','2','3','4','5'].indexOf(low) !== -1){
     var started = startBotGame(userNick, low);
     if(started) return started;
   }
-  if((low === 'кнб' || low === 'угадай' || low === 'крестики' || low === 'кости' || low === 'мишень') && !DB.botGames[userNick]){
-    var started2 = startBotGame(userNick, low);
+  if(!DB.botGames[userNick] && (low === 'кнб' || low === 'угадай' || low === 'крестики' || low === 'кости' || low === 'мишень')){
+    var map = { 'кнб':'1', 'угадай':'2', 'крестики':'3', 'кости':'4', 'мишень':'5' };
+    var started2 = startBotGame(userNick, map[low]);
     if(started2) return started2;
   }
 
-  // Обычные команды
-  if(low === '/help' || low === 'помощь' || low === 'help'){
-    return '🤖 Мои команды:\n\n📌 Базовое:\n/help, /ping, /id, /time, /date\n\n🧮 Полезное:\n/calc 2+2, /random 1 100, /coin, /dice, /password 16\n\n🎮 Игры:\n/game — список игр\n\n🌍 Инфо:\n/weather Москва, /wiki Россия\n\n🎉 Приколы:\n/joke, /fact, /quote, /8ball, /love';
-  }
+  // 4. Обычные команды
   if(low === '/ping') return '🏓 Понг!';
   if(low === '/id') return '🆔 ID в ⚙️ Настройки';
   if(low === '/time') return '🕐 ' + new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
@@ -404,6 +401,7 @@ function botReply(text, userNick){
     const pct = (h * 7) % 101;
     return '💖 Совместимость: ' + pct + '%';
   }
+
   const d = ['Привет! /help 🤖','Попробуй /help 😊','/game для игр 🎮','Что-то не понял. /help?'];
   return d[Math.floor(Math.random()*d.length)];
 }

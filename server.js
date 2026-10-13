@@ -1,18 +1,19 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const webpush = require('web-push');
 const app = express();
 app.use(express.json({ limit: '20mb' }));
 app.use(express.static('public'));
 
 const DATA_FILE = '/app/data/data.json';
+const UPLOADS_DIR = '/app/data/uploads';
 const AUDIO_DIR = '/app/data/audio';
+
+try { fs.mkdirSync(UPLOADS_DIR, { recursive: true }); } catch(e){}
 try { fs.mkdirSync(AUDIO_DIR, { recursive: true }); } catch(e){}
 
-const VAPID_PUBLIC = 'BCegcGtbAvwiimgjuzr30SZcnfzrwkYBVM3TeqFZkLQfQ21cS-t3SQmUfNnIe9du-wECrlF4FL-LetLlWivgrpw';
-const VAPID_PRIVATE = 'rzjVf92jmhpXFyhD1wHaHtAfNY-qS56L6Yl3KbPIlmk';
-try { webpush.setVapidDetails('mailto:admin@wenchat.local', VAPID_PUBLIC, VAPID_PRIVATE); } catch(e){}
+app.use('/uploads', express.static(UPLOADS_DIR));
+app.use('/audio', express.static(AUDIO_DIR));
 
 let DB = {
   users: {},
@@ -22,7 +23,8 @@ let DB = {
   tokens: {},
   pushSubs: {},
   nextId: 1,
-  nextChannelId: 1
+  nextChannelId: 1,
+  nextFileId: 1
 };
 
 function loadDB(){
@@ -38,6 +40,7 @@ function loadDB(){
       DB.pushSubs = DB.pushSubs || {};
       DB.nextId = DB.nextId || 1;
       DB.nextChannelId = DB.nextChannelId || 1;
+      DB.nextFileId = DB.nextFileId || 1;
       console.log('DB loaded from', DATA_FILE);
     } else {
       console.log('No DB file yet, starting fresh');
@@ -65,6 +68,11 @@ function genId(){
 function genChannelId(){
   const id = String(DB.nextChannelId).padStart(6, '0');
   DB.nextChannelId++;
+  return id;
+}
+function genFileId(){
+  const id = String(DB.nextFileId).padStart(8, '0');
+  DB.nextFileId++;
   return id;
 }
 function findUserById(id){
@@ -126,10 +134,86 @@ function ensureBot(){
 }
 ensureBot();
 
+/* ============ ФАЙЛЫ ============ */
+function saveBase64File(base64Data, type){
+  try {
+    var match = base64Data.match(/^data:([^;]+);base64,(.+)$/);
+    if(!match) return null;
+    var mime = match[1];
+    var data = match[2];
+    var buffer = Buffer.from(data, 'base64');
+
+    var ext = 'bin';
+    if(mime.indexOf('image/jpeg') !== -1) ext = 'jpg';
+    else if(mime.indexOf('image/png') !== -1) ext = 'png';
+    else if(mime.indexOf('image/gif') !== -1) ext = 'gif';
+    else if(mime.indexOf('image/webp') !== -1) ext = 'webp';
+    else if(mime.indexOf('audio/webm') !== -1) ext = 'webm';
+    else if(mime.indexOf('audio/mp4') !== -1) ext = 'm4a';
+    else if(mime.indexOf('audio/ogg') !== -1) ext = 'ogg';
+    else if(mime.indexOf('audio/mpeg') !== -1) ext = 'mp3';
+
+    var fileId = genFileId();
+    var fileName = fileId + '.' + ext;
+    var dir = (type === 'audio') ? AUDIO_DIR : UPLOADS_DIR;
+    var urlPrefix = (type === 'audio') ? '/audio/' : '/uploads/';
+    var filePath = path.join(dir, fileName);
+
+    fs.writeFileSync(filePath, buffer);
+    saveDB();
+    console.log('File saved:', filePath, buffer.length, 'bytes');
+    return urlPrefix + fileName;
+  } catch(e){
+    console.log('saveBase64File err', e.message);
+    return null;
+  }
+}
+
+function extractFileUrl(text){
+  if(!text) return null;
+  var m1 = text.match(/^\[img\](\/uploads\/[^\[]+)\[\/img\]$/);
+  if(m1) return m1[1];
+  var m2 = text.match(/^\[audio\](\/audio\/[^\[]+)\[\/audio\]$/);
+  if(m2) return m2[1];
+  return null;
+}
+
+function isFileUsed(fileUrl){
+  var re = new RegExp(fileUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  for(var k in DB.chats){
+    var msgs = DB.chats[k];
+    for(var i=0;i<msgs.length;i++){
+      if(msgs[i].text && re.test(msgs[i].text)) return true;
+    }
+  }
+  return false;
+}
+
+function deleteFileIfUnused(fileUrl){
+  if(!fileUrl) return false;
+  var fileName = fileUrl.split('/').pop();
+  if(!fileName) return false;
+  if(isFileUsed(fileUrl)) return false;
+
+  var filePath = null;
+  if(fileUrl.indexOf('/uploads/') === 0) filePath = path.join(UPLOADS_DIR, fileName);
+  else if(fileUrl.indexOf('/audio/') === 0) filePath = path.join(AUDIO_DIR, fileName);
+  if(!filePath) return false;
+
+  try {
+    if(fs.existsSync(filePath)){
+      fs.unlinkSync(filePath);
+      console.log('File deleted:', filePath);
+      return true;
+    }
+  } catch(e){ console.log('deleteFile err', e.message); }
+  return false;
+}
+
+/* ============ БОТ ============ */
 function botReply(text){
   const t = (text || '').trim();
   const low = t.toLowerCase();
-
   if(low === '/help' || low === 'помощь' || low === 'help'){
     return '🤖 Мои команды:\n\n📌 Базовое:\n/help, /ping, /id, /time, /date\n\n🧮 Полезное:\n/calc 2+2, /random 1 100, /coin, /dice, /password 16\n\n🌍 Инфо:\n/weather Москва, /wiki Россия\n\n🎉 Приколы:\n/joke, /fact, /quote, /8ball Вопрос?, /love Ты и Я';
   }
@@ -174,32 +258,15 @@ function botReply(text){
     return '📚 ' + q + ':\n(скоро подключу API)';
   }
   if(low === '/joke'){
-    const jokes = [
-      '— Почему программисты путают Хэллоуин и Рождество?\n— Потому что Oct 31 == Dec 25 🎃',
-      '— Сколько программистов нужно, чтобы вкрутить лампочку?\n— Ни одного, это аппаратная проблема 💡',
-      '— Какой любимый напиток программиста?\n— Java ☕',
-      '— Что говорит программист, когда тонет?\n— F1! F1! 🆘'
-    ];
+    const jokes = ['— Почему программисты путают Хэллоуин и Рождество?\n— Потому что Oct 31 == Dec 25 🎃','— Сколько программистов нужно, чтобы вкрутить лампочку?\n— Ни одного, это аппаратная проблема 💡','— Какой любимый напиток программиста?\n— Java ☕','— Что говорит программист, когда тонет?\n— F1! F1! 🆘'];
     return jokes[Math.floor(Math.random()*jokes.length)];
   }
   if(low === '/fact'){
-    const facts = [
-      '🐙 У осьминога три сердца.',
-      '🍯 Мёд никогда не портится.',
-      '🌍 Земля вращается вокруг Солнца со скоростью 107 000 км/ч.',
-      '🐌 У улитки около 25 000 зубов.',
-      '🦈 Акулы существуют дольше, чем деревья.',
-      '⚡ Молния горячее поверхности Солнца в 5 раз.'
-    ];
+    const facts = ['🐙 У осьминога три сердца.','🍯 Мёд никогда не портится.','🌍 Земля вращается вокруг Солнца со скоростью 107 000 км/ч.','🐌 У улитки около 25 000 зубов.','🦈 Акулы существуют дольше, чем деревья.','⚡ Молния горячее поверхности Солнца в 5 раз.'];
     return facts[Math.floor(Math.random()*facts.length)];
   }
   if(low === '/quote'){
-    const quotes = [
-      '«Не откладывай на завтра то, что можно сделать послезавтра.» 😴',
-      '«Единственный способ делать великие дела — любить то, что делаешь.» — Стив Джобс',
-      '«Успех — это способность идти от неудачи к неудаче, не теряя энтузиазма.» — Черчилль',
-      '«Простота — высшая форма изящества.» — Леонардо да Винчи'
-    ];
+    const quotes = ['«Не откладывай на завтра то, что можно сделать послезавтра.» 😴','«Единственный способ делать великие дела — любить то, что делаешь.» — Стив Джобс','«Успех — это способность идти от неудачи к неудаче, не теряя энтузиазма.» — Черчилль','«Простота — высшая форма изящества.» — Леонардо да Винчи'];
     return quotes[Math.floor(Math.random()*quotes.length)];
   }
   if(low.startsWith('/8ball')){
@@ -215,12 +282,7 @@ function botReply(text){
     const pct = (h * 7) % 101;
     return '💖 Совместимость: ' + pct + '%\n' + (pct > 70 ? '💘 Отличная пара!' : pct > 40 ? '😊 Есть шансы!' : '😅 Может, просто друзья?');
   }
-  const defaults = [
-    'Привет! Я Wenbot 🤖 Напиши /help.',
-    'Хм, интересно! Попробуй /help 😊',
-    'Я пока учусь. /help, если нужна помощь!',
-    'Что-то я не понял. Может, /help? 😅'
-  ];
+  const defaults = ['Привет! Я Wenbot 🤖 Напиши /help.','Хм, интересно! Попробуй /help 😊','Я пока учусь. /help, если нужна помощь!','Что-то я не понял. Может, /help? 😅'];
   return defaults[Math.floor(Math.random()*defaults.length)];
 }
 
@@ -232,7 +294,7 @@ function sendBotReply(userNick, text){
   saveDB();
 }
 
-// РЕГИСТРАЦИЯ
+/* ============ РЕГИСТРАЦИЯ / ВХОД ============ */
 app.post('/api/register', (req, res) => {
   const { nick, pass } = req.body || {};
   if(!nick || !pass) return res.json({ error: 'Заполни всё' });
@@ -256,7 +318,6 @@ app.post('/api/register', (req, res) => {
   res.json({ ok: true, token, user: publicUser(DB.users[nick]) });
 });
 
-// ВХОД
 app.post('/api/login', (req, res) => {
   const { nick, pass } = req.body || {};
   const u = DB.users[nick];
@@ -270,13 +331,12 @@ app.post('/api/login', (req, res) => {
   res.json({ ok: true, token, user: publicUser(u) });
 });
 
-// ПРОФИЛЬ
+/* ============ ПРОФИЛЬ ============ */
 app.get('/api/me', auth, (req, res) => {
   const u = DB.users[req.nick];
   if(!u) return res.json({ error: 'Нет юзера' });
   res.json({ ok: true, user: publicUser(u) });
 });
-
 app.post('/api/me/update', auth, (req, res) => {
   const u = DB.users[req.nick];
   if(!u) return res.json({ error: 'Нет юзера' });
@@ -287,13 +347,11 @@ app.post('/api/me/update', auth, (req, res) => {
   res.json({ ok: true, user: publicUser(u) });
 });
 
-// ВСЕ ЮЗЕРЫ
 app.get('/api/users', auth, (req, res) => {
-  const list = Object.values(DB.users).map(publicUser);
-  res.json(list);
+  res.json(Object.values(DB.users).map(publicUser));
 });
 
-// ПОИСК ЮЗЕРА ПО ID
+/* ============ ПОИСК ============ */
 app.post('/api/find', auth, (req, res) => {
   const { id } = req.body || {};
   if(!/^\d{6}$/.test(id)) return res.json({ error: 'ID из 6 цифр' });
@@ -306,8 +364,6 @@ app.post('/api/find', auth, (req, res) => {
   saveDB();
   res.json({ ok: true, user: publicUser(u), me: publicUser(me) });
 });
-
-// ПОИСК КАНАЛА ПО ID
 app.post('/api/channels/find', auth, (req, res) => {
   const { id } = req.body || {};
   if(!/^\d{6}$/.test(id)) return res.json({ error: 'ID канала из 6 цифр' });
@@ -321,8 +377,6 @@ app.post('/api/channels/find', auth, (req, res) => {
   saveDB();
   res.json({ ok: true, channel: ch, me: publicUser(me) });
 });
-
-// УДАЛИТЬ ИЗ ДРУЗЕЙ
 app.post('/api/friends/remove', auth, (req, res) => {
   const me = DB.users[req.nick];
   const { nick } = req.body || {};
@@ -335,20 +389,13 @@ app.post('/api/friends/remove', auth, (req, res) => {
   res.json({ ok: true, me: publicUser(me) });
 });
 
-// СООБЩЕНИЯ
+/* ============ СООБЩЕНИЯ ============ */
 app.get('/api/messages', auth, (req, res) => {
   const { withNick, gid, cid } = req.query;
-  if(cid){
-    const key = channelKey(cid);
-    return res.json({ ok: true, msgs: DB.chats[key] || [] });
-  }
-  if(gid){
-    const key = groupKey(gid);
-    return res.json({ ok: true, msgs: DB.chats[key] || [] });
-  }
+  if(cid) return res.json({ ok: true, msgs: DB.chats[channelKey(cid)] || [] });
+  if(gid) return res.json({ ok: true, msgs: DB.chats[groupKey(gid)] || [] });
   if(!withNick) return res.json({ error: 'Нет собеседника' });
-  const key = chatKey(req.nick, withNick);
-  res.json({ ok: true, msgs: DB.chats[key] || [] });
+  res.json({ ok: true, msgs: DB.chats[chatKey(req.nick, withNick)] || [] });
 });
 
 app.post('/api/send', auth, (req, res) => {
@@ -357,26 +404,37 @@ app.post('/api/send', auth, (req, res) => {
   const { to, gid, cid, text, replyTo } = req.body || {};
   if(!text || !text.trim()) return res.json({ error: 'Пусто' });
 
-  let key, recipients = [];
+  let key;
   if(cid){
     const ch = DB.channels[cid];
     if(!ch) return res.json({ error: 'Нет канала' });
     if(!ch.members || ch.members.indexOf(req.nick) === -1) return res.json({ error: 'Не подписан' });
     if(ch.owner !== req.nick && !me.isAdmin) return res.json({ error: 'Писать может только владелец' });
     key = channelKey(cid);
-    recipients = (ch.members || []).filter(n => n !== req.nick && n !== BOT_NICK);
   } else if(gid){
     const g = DB.groups[gid];
     if(!g || g.members.indexOf(req.nick) === -1) return res.json({ error: 'Не в группе' });
     key = groupKey(gid);
-    recipients = g.members.filter(n => n !== req.nick && n !== BOT_NICK);
   } else if(to){
     key = chatKey(req.nick, to);
-    recipients = [to];
   } else return res.json({ error: 'Некуда' });
 
+  var finalText = text.trim();
+  var imgMatch = finalText.match(/^\[img\](data:[^)]+)\[\/img\]$/);
+  if(imgMatch){
+    var url = saveBase64File(imgMatch[1], 'image');
+    if(url) finalText = '[img]' + url + '[/img]';
+    else return res.json({ error: 'Не удалось сохранить картинку' });
+  }
+  var audioMatch = finalText.match(/^\[audio\](data:[^)]+)\[\/audio\]$/);
+  if(audioMatch){
+    var aurl = saveBase64File(audioMatch[1], 'audio');
+    if(aurl) finalText = '[audio]' + aurl + '[/audio]';
+    else return res.json({ error: 'Не удалось сохранить аудио' });
+  }
+
   if(!DB.chats[key]) DB.chats[key] = [];
-  const msgObj = { from: req.nick, text: text.trim(), t: Date.now() };
+  const msgObj = { from: req.nick, text: finalText, t: Date.now() };
   if(replyTo && replyTo.from){
     msgObj.replyTo = { from: replyTo.from, text: String(replyTo.text || '').slice(0, 200) };
   }
@@ -387,20 +445,10 @@ app.post('/api/send', auth, (req, res) => {
     setTimeout(function(){ sendBotReply(req.nick, text); }, 400);
   }
 
-  recipients.forEach(function(nick){
-    if(nick === BOT_NICK) return;
-    const subs = DB.pushSubs[nick] || [];
-    subs.forEach(function(sub){
-      webpush.sendNotification(sub, JSON.stringify({
-        title: req.nick, body: text.trim().slice(0, 100), from: req.nick
-      })).catch(function(){});
-    });
-  });
-
   res.json({ ok: true });
 });
 
-// РЕАКЦИИ
+/* ============ РЕАКЦИИ ============ */
 app.post('/api/msg/react', auth, (req, res) => {
   const { withNick, gid, cid, idx, emoji } = req.body || {};
   let key;
@@ -421,7 +469,7 @@ app.post('/api/msg/react', auth, (req, res) => {
   res.json({ ok: true });
 });
 
-// РЕДАКТИРОВАНИЕ
+/* ============ РЕДАКТИРОВАНИЕ ============ */
 app.post('/api/msg/edit', auth, (req, res) => {
   const { withNick, gid, cid, idx, text } = req.body || {};
   let key;
@@ -439,7 +487,7 @@ app.post('/api/msg/edit', auth, (req, res) => {
   res.json({ ok: true });
 });
 
-// УДАЛЕНИЕ
+/* ============ УДАЛЕНИЕ ============ */
 app.post('/api/msg/delete', auth, (req, res) => {
   const me = DB.users[req.nick];
   const { withNick, gid, cid, idx } = req.body || {};
@@ -452,12 +500,97 @@ app.post('/api/msg/delete', auth, (req, res) => {
   if(!arr || !arr[idx]) return res.json({ error: 'Нет сообщения' });
   const m = arr[idx];
   if(m.from !== req.nick && !me.isAdmin) return res.json({ error: 'Только свои или админ' });
+
+  var fileUrl = extractFileUrl(m.text);
   arr.splice(idx, 1);
   saveDB();
+
+  if(fileUrl){
+    setTimeout(function(){ deleteFileIfUnused(fileUrl); }, 100);
+  }
+
   res.json({ ok: true });
 });
 
-// ГРУППЫ
+/* ============ МАССОВОЕ УДАЛЕНИЕ ФОТО ============ */
+app.post('/api/admin/delete-all-photo', auth, (req, res) => {
+  const me = DB.users[req.nick];
+  if(!me.isAdmin) return res.json({ error: 'Только админ' });
+
+  var deletedMsgs = 0;
+  var deletedFiles = 0;
+
+  for(var k in DB.chats){
+    var msgs = DB.chats[k];
+    for(var i = msgs.length - 1; i >= 0; i--){
+      var text = msgs[i].text || '';
+      if(text.indexOf('[img]') === 0){
+        var fileUrl = extractFileUrl(text);
+        msgs.splice(i, 1);
+        deletedMsgs++;
+        if(fileUrl){
+          var fileName = fileUrl.split('/').pop();
+          var fpath = path.join(UPLOADS_DIR, fileName);
+          try {
+            if(fs.existsSync(fpath)){ fs.unlinkSync(fpath); deletedFiles++; }
+          } catch(e){}
+        }
+      }
+    }
+  }
+
+  try {
+    var files = fs.readdirSync(UPLOADS_DIR);
+    files.forEach(function(f){
+      try { fs.unlinkSync(path.join(UPLOADS_DIR, f)); deletedFiles++; } catch(e){}
+    });
+  } catch(e){}
+
+  saveDB();
+  console.log('Delete all photo:', deletedMsgs, 'msgs,', deletedFiles, 'files');
+  res.json({ ok: true, msgs: deletedMsgs, files: deletedFiles });
+});
+
+/* ============ МАССОВОЕ УДАЛЕНИЕ АУДИО ============ */
+app.post('/api/admin/delete-all-audio', auth, (req, res) => {
+  const me = DB.users[req.nick];
+  if(!me.isAdmin) return res.json({ error: 'Только админ' });
+
+  var deletedMsgs = 0;
+  var deletedFiles = 0;
+
+  for(var k in DB.chats){
+    var msgs = DB.chats[k];
+    for(var i = msgs.length - 1; i >= 0; i--){
+      var text = msgs[i].text || '';
+      if(text.indexOf('[audio]') === 0){
+        var fileUrl = extractFileUrl(text);
+        msgs.splice(i, 1);
+        deletedMsgs++;
+        if(fileUrl){
+          var fileName = fileUrl.split('/').pop();
+          var fpath = path.join(AUDIO_DIR, fileName);
+          try {
+            if(fs.existsSync(fpath)){ fs.unlinkSync(fpath); deletedFiles++; }
+          } catch(e){}
+        }
+      }
+    }
+  }
+
+  try {
+    var files = fs.readdirSync(AUDIO_DIR);
+    files.forEach(function(f){
+      try { fs.unlinkSync(path.join(AUDIO_DIR, f)); deletedFiles++; } catch(e){}
+    });
+  } catch(e){}
+
+  saveDB();
+  console.log('Delete all audio:', deletedMsgs, 'msgs,', deletedFiles, 'files');
+  res.json({ ok: true, msgs: deletedMsgs, files: deletedFiles });
+});
+
+/* ============ ГРУППЫ ============ */
 app.get('/api/groups', auth, (req, res) => {
   const mine = {};
   for(const gid in DB.groups){
@@ -477,7 +610,7 @@ app.post('/api/groups/create', auth, (req, res) => {
   res.json({ ok: true, gid });
 });
 
-// КАНАЛЫ
+/* ============ КАНАЛЫ ============ */
 app.get('/api/channels', auth, (req, res) => {
   const mine = {};
   for(const cid in DB.channels){
@@ -486,7 +619,6 @@ app.get('/api/channels', auth, (req, res) => {
   }
   res.json(mine);
 });
-
 app.post('/api/channels/create', auth, (req, res) => {
   const me = DB.users[req.nick];
   if(!me.isAdmin) return res.json({ error: 'Каналы создаёт только админ' });
@@ -495,20 +627,15 @@ app.post('/api/channels/create', auth, (req, res) => {
   const cid = 'c' + Date.now();
   const channelId = genChannelId();
   DB.channels[cid] = {
-    cid: cid,
-    channelId: channelId,
-    name: name,
+    cid: cid, channelId: channelId, name: name,
     description: description || '',
-    owner: req.nick,
-    members: [req.nick],
-    created: Date.now()
+    owner: req.nick, members: [req.nick], created: Date.now()
   };
   if(!me.channels) me.channels = [];
   me.channels.push(cid);
   saveDB();
   res.json({ ok: true, cid: cid, channelId: channelId, channel: DB.channels[cid] });
 });
-
 app.post('/api/channels/leave', auth, (req, res) => {
   const me = DB.users[req.nick];
   const { cid } = req.body || {};
@@ -525,7 +652,7 @@ app.post('/api/channels/leave', auth, (req, res) => {
   res.json({ ok: true, me: publicUser(me) });
 });
 
-// МАГАЗИН
+/* ============ МАГАЗИН ============ */
 const SHOP = [
   {id:'nick_blue', title:'Синий ник', desc:'Цвет ника', price:50, color:'#4a7dff'},
   {id:'nick_green', title:'Зелёный ник', desc:'Цвет ника', price:50, color:'#22c55e'},
@@ -665,25 +792,12 @@ app.post('/api/shop/forget', auth, (req, res) => {
   res.json({ ok: true, user: publicUser(me) });
 });
 
-// PUSH
-app.get('/api/push/key', (req, res) => res.json({ key: VAPID_PUBLIC }));
-app.post('/api/push/subscribe', auth, (req, res) => {
-  const { sub } = req.body || {};
-  if(!sub) return res.json({ error: 'Нет sub' });
-  DB.pushSubs = DB.pushSubs || {};
-  if(!DB.pushSubs[req.nick]) DB.pushSubs[req.nick] = [];
-  const exists = DB.pushSubs[req.nick].some(s => s.endpoint === sub.endpoint);
-  if(!exists){ DB.pushSubs[req.nick].push(sub); saveDB(); }
-  res.json({ ok: true });
-});
-
-// АДМИН
+/* ============ АДМИН ============ */
 app.post('/api/dev/check', auth, (req, res) => {
   const { code } = req.body || {};
   if(code !== DEV_CODE) return res.json({ error: 'Неверный код' });
   res.json({ ok: true });
 });
-
 app.post('/api/admin/coins', auth, (req, res) => {
   const me = DB.users[req.nick];
   if(!me.isAdmin) return res.json({ error: 'Только админ' });
@@ -695,7 +809,6 @@ app.post('/api/admin/coins', auth, (req, res) => {
   saveDB();
   res.json({ ok: true, user: publicUser(u) });
 });
-
 app.post('/api/admin/coins-all', auth, (req, res) => {
   const me = DB.users[req.nick];
   if(!me.isAdmin) return res.json({ error: 'Только админ' });
@@ -709,7 +822,6 @@ app.post('/api/admin/coins-all', auth, (req, res) => {
   saveDB();
   res.json({ ok: true });
 });
-
 app.post('/api/admin/set-admin', auth, (req, res) => {
   const me = DB.users[req.nick];
   if(!me.isAdmin) return res.json({ error: 'Только админ' });
@@ -721,7 +833,6 @@ app.post('/api/admin/set-admin', auth, (req, res) => {
   saveDB();
   res.json({ ok: true, user: publicUser(u) });
 });
-
 app.post('/api/admin/ban', auth, (req, res) => {
   const me = DB.users[req.nick];
   if(!me.isAdmin) return res.json({ error: 'Только админ' });
@@ -733,7 +844,6 @@ app.post('/api/admin/ban', auth, (req, res) => {
   saveDB();
   res.json({ ok: true, user: publicUser(u) });
 });
-
 app.post('/api/admin/broadcast', auth, (req, res) => {
   const me = DB.users[req.nick];
   if(!me.isAdmin) return res.json({ error: 'Только админ' });
@@ -754,16 +864,15 @@ app.post('/api/admin/broadcast', auth, (req, res) => {
   saveDB();
   res.json({ ok: true, count });
 });
-
 app.post('/api/admin/wipe', auth, (req, res) => {
   const me = DB.users[req.nick];
   if(!me.isAdmin) return res.json({ error: 'Только админ' });
-  DB = { users:{}, chats:{}, groups:{}, channels:{}, tokens:{}, pushSubs:{}, nextId:1, nextChannelId:1 };
+  DB = { users:{}, chats:{}, groups:{}, channels:{}, tokens:{}, pushSubs:{}, nextId:1, nextChannelId:1, nextFileId:1 };
   saveDB();
   res.json({ ok: true });
 });
 
-// ГЛАВНАЯ
+/* ============ ГЛАВНАЯ ============ */
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

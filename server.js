@@ -16,9 +16,10 @@ app.use('/uploads', express.static(UPLOADS_DIR));
 app.use('/audio', express.static(AUDIO_DIR));
 
 let DB = {
-  users: {}, chats: {}, groups: {}, channels: {}, games: {},
+  users: {}, chats: {}, groups: {}, channels: {},
+  botGames: {},
   tokens: {}, pushSubs: {},
-  nextId: 1, nextChannelId: 1, nextFileId: 1, nextGameId: 1
+  nextId: 1, nextChannelId: 1, nextFileId: 1
 };
 
 function loadDB(){
@@ -30,13 +31,12 @@ function loadDB(){
       DB.chats = DB.chats || {};
       DB.groups = DB.groups || {};
       DB.channels = DB.channels || {};
-      DB.games = DB.games || {};
+      DB.botGames = DB.botGames || {};
       DB.tokens = DB.tokens || {};
       DB.pushSubs = DB.pushSubs || {};
       DB.nextId = DB.nextId || 1;
       DB.nextChannelId = DB.nextChannelId || 1;
       DB.nextFileId = DB.nextFileId || 1;
-      DB.nextGameId = DB.nextGameId || 1;
       console.log('DB loaded from', DATA_FILE);
     } else {
       console.log('No DB file yet, starting fresh');
@@ -59,7 +59,6 @@ const BOT_NICK = 'Wenbot';
 function genId(){ const id = String(DB.nextId).padStart(6,'0'); DB.nextId++; return id; }
 function genChannelId(){ const id = String(DB.nextChannelId).padStart(6,'0'); DB.nextChannelId++; return id; }
 function genFileId(){ const id = String(DB.nextFileId).padStart(8,'0'); DB.nextFileId++; return id; }
-function genGameId(){ const id = 'gm' + Date.now() + Math.floor(Math.random()*1000); return id; }
 function findUserById(id){ for(const k in DB.users) if(DB.users[k].id === id) return DB.users[k]; return null; }
 function findChannelById(id){ for(const k in DB.channels) if(DB.channels[k].channelId === id) return DB.channels[k]; return null; }
 function chatKey(a,b){ return 'p:' + [a,b].sort().join('|'); }
@@ -111,6 +110,7 @@ function ensureBot(){
 }
 ensureBot();
 
+/* ============ ФАЙЛЫ ============ */
 function saveBase64File(base64Data, type){
   try {
     var match = base64Data.match(/^data:([^;]+);base64,(.+)$/);
@@ -134,7 +134,6 @@ function saveBase64File(base64Data, type){
     return urlPrefix + fileName;
   } catch(e){ console.log('saveBase64File err', e.message); return null; }
 }
-
 function extractFileUrl(text){
   if(!text) return null;
   var m1 = text.match(/^\[img\](\/uploads\/[^\[]+)\[\/img\]$/); if(m1) return m1[1];
@@ -162,10 +161,189 @@ function deleteFileIfUnused(fileUrl){
   return false;
 }
 
+/* ============ ИГРЫ В БОТЕ ============ */
+var GAME_LIST = '🎮 Выбери игру:\n1️⃣ ✊✋✌️ Камень-ножницы-бумага\n2️⃣ 🔢 Угадай число\n3️⃣ ❌⭕ Крестики-нолики\n4️⃣ 🎲 Кости\n5️⃣ 🎯 Мишень\n\nНапиши номер (1-5)';
+
+function startBotGame(nick, gameNum){
+  var game = null;
+  if(gameNum === '1' || gameNum === 'кнб') game = 'rps';
+  else if(gameNum === '2' || gameNum === 'угадай') game = 'guess';
+  else if(gameNum === '3' || gameNum === 'крестики') game = 'ttt';
+  else if(gameNum === '4' || gameNum === 'кости') game = 'dice';
+  else if(gameNum === '5' || gameNum === 'мишень') game = 'target';
+  if(!game) return null;
+  var state = {};
+  if(game === 'ttt') state.board = ['','','','','','','','',''];
+  if(game === 'guess') state.secret = Math.floor(Math.random()*100)+1;
+  if(game === 'guess') state.tries = 0;
+  if(game === 'dice') state.myRoll = null;
+  if(game === 'target') state.myShot = null;
+  DB.botGames[nick] = { game: game, state: state, started: Date.now() };
+  saveDB();
+  if(game === 'rps') return '✊✋✌️ КНБ!\nВыбери: 1=✊, 2=✌️, 3=✋';
+  if(game === 'guess') return '🔢 Я загадал число от 1 до 100.\nНапиши своё предположение.';
+  if(game === 'ttt') return '❌⭕ Крестики-нолики!\nТы — ❌, я — ⭕\n\nПоле:\n1️⃣2️⃣3️⃣\n4️⃣5️⃣6️⃣\n7️⃣8️⃣9️⃣\n\nНапиши номер клетки (1-9)';
+  if(game === 'dice') return '🎲 Кости!\nНапиши «бросок» чтобы бросить 2 кубика.';
+  if(game === 'target') return '🎯 Мишень!\nВыбери куда стрелять (1-10). Чем ближе к 10 — тем лучше.';
+  return null;
+}
+
+function playBotGame(nick, text){
+  var bg = DB.botGames[nick];
+  if(!bg) return null;
+  var t = text.trim().toLowerCase();
+
+  if(bg.game === 'rps'){
+    var pick = null;
+    if(t === '1' || t === 'камень' || t === 'к') pick = 'rock';
+    else if(t === '2' || t === 'ножницы' || t === 'н') pick = 'scissors';
+    else if(t === '3' || t === 'бумага' || t === 'б') pick = 'paper';
+    if(!pick) return '⚠️ Выбери: 1=✊, 2=✌️, 3=✋';
+    var opts = ['rock','scissors','paper'];
+    var bot = opts[Math.floor(Math.random()*3)];
+    var emoji = { rock:'✊', scissors:'✌️', paper:'✋' };
+    var res;
+    if(pick === bot) res = '🤝 Ничья!';
+    else if((pick==='rock'&&bot==='scissors')||(pick==='scissors'&&bot==='paper')||(pick==='paper'&&bot==='rock')) res = '🎉 Ты выиграл!';
+    else res = '😢 Я выиграл!';
+    delete DB.botGames[nick];
+    saveDB();
+    return 'Ты '+emoji[pick]+' vs Я '+emoji[bot]+'\n' + res + '\n\nХочешь ещё? /game';
+  }
+
+  if(bg.game === 'guess'){
+    var g = parseInt(t);
+    if(!g || g < 1 || g > 100) return '⚠️ Число от 1 до 100';
+    bg.state.tries++;
+    if(g === bg.state.secret){
+      var tries = bg.state.tries;
+      delete DB.botGames[nick];
+      saveDB();
+      return '🎉 Угадал! Это ' + g + '\nПопыток: ' + tries + '\n\nЕщё? /game';
+    }
+    saveDB();
+    if(g < bg.state.secret) return '⬆️ Больше! (попытка ' + bg.state.tries + ')';
+    return '⬇️ Меньше! (попытка ' + bg.state.tries + ')';
+  }
+
+  if(bg.game === 'ttt'){
+    var cell = parseInt(t);
+    if(!cell || cell < 1 || cell > 9) return '⚠️ Номер клетки 1-9';
+    var idx = cell - 1;
+    if(bg.state.board[idx]) return '⚠️ Клетка занята';
+    bg.state.board[idx] = '❌';
+    // Проверка победы игрока
+    var w = checkTTT(bg.state.board);
+    if(w === '❌'){
+      delete DB.botGames[nick];
+      saveDB();
+      return renderTTT(bg.state.board) + '\n\n🎉 Ты выиграл!\n\nЕщё? /game';
+    }
+    if(bg.state.board.indexOf('') === -1){
+      delete DB.botGames[nick];
+      saveDB();
+      return renderTTT(bg.state.board) + '\n\n🤝 Ничья!\n\nЕщё? /game';
+    }
+    // Ход бота
+    var empty = [];
+    bg.state.board.forEach(function(v, i){ if(!v) empty.push(i); });
+    var botMove = empty[Math.floor(Math.random()*empty.length)];
+    bg.state.board[botMove] = '⭕';
+    var w2 = checkTTT(bg.state.board);
+    if(w2 === '⭕'){
+      delete DB.botGames[nick];
+      saveDB();
+      return renderTTT(bg.state.board) + '\n\n😢 Я выиграл!\n\nЕщё? /game';
+    }
+    if(bg.state.board.indexOf('') === -1){
+      delete DB.botGames[nick];
+      saveDB();
+      return renderTTT(bg.state.board) + '\n\n🤝 Ничья!\n\nЕщё? /game';
+    }
+    saveDB();
+    return renderTTT(bg.state.board) + '\n\nТвой ход (1-9)';
+  }
+
+  if(bg.game === 'dice'){
+    if(t !== 'бросок' && t !== 'брос' && t !== 'кинуть') return '🎲 Напиши «бросок» чтобы бросить';
+    var my1 = Math.floor(Math.random()*6)+1;
+    var my2 = Math.floor(Math.random()*6)+1;
+    var bot1 = Math.floor(Math.random()*6)+1;
+    var bot2 = Math.floor(Math.random()*6)+1;
+    var mySum = my1 + my2;
+    var botSum = bot1 + bot2;
+    var result;
+    if(mySum > botSum) result = '🎉 Ты выиграл!';
+    else if(mySum < botSum) result = '😢 Я выиграл!';
+    else result = '🤝 Ничья!';
+    delete DB.botGames[nick];
+    saveDB();
+    return 'Ты 🎲 ' + my1 + '+' + my2 + '=' + mySum + '\nЯ 🎲 ' + bot1 + '+' + bot2 + '=' + botSum + '\n\n' + result + '\n\nЕщё? /game';
+  }
+
+  if(bg.game === 'target'){
+    var shot = parseInt(t);
+    if(!shot || shot < 1 || shot > 10) return '🎯 Число от 1 до 10';
+    var botShot = Math.floor(Math.random()*10)+1;
+    var myDist = Math.abs(10 - shot);
+    var botDist = Math.abs(10 - botShot);
+    var res2;
+    if(myDist < botDist) res2 = '🎉 Ты ближе к 10! Победа!';
+    else if(myDist > botDist) res2 = '😢 Я ближе. Проигрыш.';
+    else res2 = '🤝 Одинаково! Ничья!';
+    delete DB.botGames[nick];
+    saveDB();
+    return 'Ты попал в ' + shot + '\nЯ попал в ' + botShot + '\n\n' + res2 + '\n\nЕщё? /game';
+  }
+
+  return null;
+}
+
+function renderTTT(b){
+  var e = function(i){ return b[i] || (i+1); };
+  return 'Поле:\n' +
+    e(0)+'|'+e(1)+'|'+e(2)+'\n' +
+    e(3)+'|'+e(4)+'|'+e(5)+'\n' +
+    e(6)+'|'+e(7)+'|'+e(8);
+}
+function checkTTT(b){
+  var lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  for(var i=0;i<lines.length;i++){
+    var a=lines[i][0],c=lines[i][1],d=lines[i][2];
+    if(b[a] && b[a] === b[c] && b[a] === b[d]) return b[a];
+  }
+  return null;
+}
+
 /* ============ БОТ ============ */
-function botReply(text){
+function botReply(text, userNick){
   const t = (text || '').trim(), low = t.toLowerCase();
-  if(low === '/help' || low === 'помощь' || low === 'help') return '🤖 Команды:\n/help, /ping, /id, /time, /date\n/calc 2+2, /random 1 100, /coin, /dice, /password 16\n/weather Москва, /wiki Россия\n/joke, /fact, /quote, /8ball, /love';
+
+  // Если игра активна — сначала пробуем игровой ход
+  if(DB.botGames[userNick]){
+    var gameResult = playBotGame(userNick, text);
+    if(gameResult) return gameResult;
+  }
+
+  // Запуск игры
+  if(low === '/game' || low === '/игра' || low === 'игра' || low === 'игры' || low === 'game' || low === '🎮'){
+    return GAME_LIST;
+  }
+
+  // Выбор игры
+  if(['1','2','3','4','5'].indexOf(low) !== -1 && !DB.botGames[userNick]){
+    var started = startBotGame(userNick, low);
+    if(started) return started;
+  }
+  if((low === 'кнб' || low === 'угадай' || low === 'крестики' || low === 'кости' || low === 'мишень') && !DB.botGames[userNick]){
+    var started2 = startBotGame(userNick, low);
+    if(started2) return started2;
+  }
+
+  // Обычные команды
+  if(low === '/help' || low === 'помощь' || low === 'help'){
+    return '🤖 Мои команды:\n\n📌 Базовое:\n/help, /ping, /id, /time, /date\n\n🧮 Полезное:\n/calc 2+2, /random 1 100, /coin, /dice, /password 16\n\n🎮 Игры:\n/game — список игр\n\n🌍 Инфо:\n/weather Москва, /wiki Россия\n\n🎉 Приколы:\n/joke, /fact, /quote, /8ball, /love';
+  }
   if(low === '/ping') return '🏓 Понг!';
   if(low === '/id') return '🆔 ID в ⚙️ Настройки';
   if(low === '/time') return '🕐 ' + new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
@@ -226,11 +404,12 @@ function botReply(text){
     const pct = (h * 7) % 101;
     return '💖 Совместимость: ' + pct + '%';
   }
-  const d = ['Привет! /help 🤖','Попробуй /help 😊','/help для команд','Что-то не понял. /help?'];
+  const d = ['Привет! /help 🤖','Попробуй /help 😊','/game для игр 🎮','Что-то не понял. /help?'];
   return d[Math.floor(Math.random()*d.length)];
 }
+
 function sendBotReply(userNick, text){
-  const reply = botReply(text);
+  const reply = botReply(text, userNick);
   const key = chatKey(BOT_NICK, userNick);
   if(!DB.chats[key]) DB.chats[key] = [];
   DB.chats[key].push({ from: BOT_NICK, text: reply, t: Date.now() });
@@ -513,266 +692,6 @@ app.post('/api/channels/create', auth, (req, res) => {
   res.json({ ok: true, cid, channelId, channel: DB.channels[cid] });
 });
 
-/* ============ ИГРЫ ============ */
-function getGamePlayers(gd){ return [gd.from, gd.to]; }
-function getOpponent(gd, me){ return gd.from === me ? gd.to : gd.from; }
-
-function initGameState(game){
-  if(game === 'ttt') return { board: ['','','','','','','','',''] };
-  if(game === 'rps') return { picks: {} };
-  if(game === 'dice') return { rolls: {} };
-  if(game === 'target') return { shots: {} };
-  if(game === 'guess') return { secret: Math.floor(Math.random()*100)+1, guesses: [], hints: [] };
-  return {};
-}
-
-function serializeGame(gd, forNick){
-  var opp = getOpponent(gd, forNick);
-  var st = gd.state || {};
-  var serialized = {
-    gameId: gd.gameId, game: gd.game, from: gd.from, to: gd.to,
-    turn: gd.turn, finished: gd.finished, winner: gd.winner || null,
-    opponent: opp
-  };
-  if(gd.game === 'ttt') serialized.state = { board: st.board || [] };
-  else if(gd.game === 'rps') serialized.state = { picks: st.picks || {} };
-  else if(gd.game === 'dice') serialized.state = { myDice: (st.rolls||{})[forNick] || null, oppDice: (st.rolls||{})[opp] || null };
-  else if(gd.game === 'target') serialized.state = { myShot: (st.shots||{})[forNick] || null, oppShot: (st.shots||{})[opp] || null };
-  else if(gd.game === 'guess') serialized.state = { hints: (st.hints||[]).slice(-10), guesses: st.guesses || [] };
-  return serialized;
-}
-
-function updateGameMessage(gd){
-  var key = chatKey(gd.from, gd.to);
-  if(!DB.chats[key]) DB.chats[key] = [];
-  var msgs = DB.chats[key];
-  var msgIdx = -1;
-  for(var i=0;i<msgs.length;i++){
-    if(msgs[i].text && msgs[i].text.indexOf('[game-active]') === 0){
-      try {
-        var d = JSON.parse(msgs[i].text.substring(13, msgs[i].text.indexOf('[/game-active]')));
-        if(d.gameId === gd.gameId){ msgIdx = i; break; }
-      } catch(e){}
-    }
-  }
-  if(msgIdx === -1) return;
-  var serialized = {
-    gameId: gd.gameId, game: gd.game, from: gd.from, to: gd.to,
-    turn: gd.turn, finished: gd.finished, winner: gd.winner || null
-  };
-  if(gd.game === 'ttt') serialized.state = { board: gd.state.board };
-  else if(gd.game === 'rps') serialized.state = { picks: gd.state.picks || {} };
-  else if(gd.game === 'dice') serialized.state = { myDice: null, oppDice: null, rolls: gd.state.rolls || {} };
-  else if(gd.game === 'target') serialized.state = { myShot: null, oppShot: null, shots: gd.state.shots || {} };
-  else if(gd.game === 'guess') serialized.state = { hints: (gd.state.hints||[]).slice(-10), guesses: gd.state.guesses || [] };
-  msgs[msgIdx].text = '[game-active]' + JSON.stringify(serialized) + '[/game-active]';
-  saveDB();
-}
-
-function finishGame(gd, winner){
-  gd.finished = true;
-  gd.winner = winner;
-  updateGameMessage(gd);
-  var key = chatKey(gd.from, gd.to);
-  var names = { rps:'КНБ', guess:'Угадай число', ttt:'Крестики-нолики', dice:'Кости', target:'Мишень' };
-  var text = winner ? ('🏆 ' + winner + ' выиграл в «' + (names[gd.game]||gd.game) + '»!') : ('🤝 Ничья в «' + (names[gd.game]||gd.game) + '»!');
-  var resultMsg = { from: 'system', text: '[game-result]' + JSON.stringify({ text: text, gameId: gd.gameId }) + '[/game-result]', t: Date.now() };
-  DB.chats[key].push(resultMsg);
-  saveDB();
-  // Удалить результат через 3 секунды
-  var gameId = gd.gameId;
-  setTimeout(function(){
-    if(!DB.chats[key]) return;
-    var arr = DB.chats[key];
-    for(var i = arr.length - 1; i >= 0; i--){
-      if(arr[i].text && arr[i].text.indexOf('[game-result]') === 0){
-        try {
-          var d = JSON.parse(arr[i].text.substring(14, arr[i].text.indexOf('[/game-result]')));
-          if(d.gameId === gameId){ arr.splice(i, 1); }
-        } catch(e){}
-      }
-    }
-    // Удалить и активное поле
-    for(var j = arr.length - 1; j >= 0; j--){
-      if(arr[j].text && arr[j].text.indexOf('[game-active]') === 0){
-        try {
-          var d2 = JSON.parse(arr[j].text.substring(13, arr[j].text.indexOf('[/game-active]')));
-          if(d2.gameId === gameId){ arr.splice(j, 1); }
-        } catch(e){}
-      }
-    }
-    delete DB.games[gameId];
-    saveDB();
-  }, 3000);
-}
-
-app.post('/api/game/invite', auth, (req, res) => {
-  const me = DB.users[req.nick];
-  const { to, game } = req.body || {};
-  if(!to || !game) return res.json({ error: 'Нет данных' });
-  if(!DB.users[to]) return res.json({ error: 'Юзер не найден' });
-  var gameId = genGameId();
-  DB.games[gameId] = {
-    gameId: gameId, game: game, from: req.nick, to: to,
-    status: 'pending', turn: req.nick, finished: false, winner: null,
-    state: initGameState(game), created: Date.now()
-  };
-  saveDB();
-  var key = chatKey(req.nick, to);
-  if(!DB.chats[key]) DB.chats[key] = [];
-  var invMsg = { from: req.nick, text: '[game-invite]' + JSON.stringify({ gameId: gameId, from: req.nick, to: to, game: game, status: 'pending' }) + '[/game-invite]', t: Date.now() };
-  DB.chats[key].push(invMsg);
-  saveDB();
-  res.json({ ok: true, gameId: gameId });
-});
-
-app.post('/api/game/accept', auth, (req, res) => {
-  const { gameId } = req.body || {};
-  var gd = DB.games[gameId];
-  if(!gd) return res.json({ error: 'Игра не найдена' });
-  if(gd.to !== req.nick) return res.json({ error: 'Только приглашённый' });
-  if(gd.status !== 'pending') return res.json({ error: 'Уже принято' });
-  gd.status = 'accepted';
-  saveDB();
-  var key = chatKey(gd.from, gd.to);
-  var msgs = DB.chats[key] || [];
-  // Удалить приглашение
-  for(var i = msgs.length - 1; i >= 0; i--){
-    if(msgs[i].text && msgs[i].text.indexOf('[game-invite]') === 0){
-      try {
-        var d = JSON.parse(msgs[i].text.substring(13, msgs[i].text.indexOf('[/game-invite]')));
-        if(d.gameId === gameId){ msgs.splice(i, 1); }
-      } catch(e){}
-    }
-  }
-  // Добавить игровое поле
-  var serialized = {
-    gameId: gd.gameId, game: gd.game, from: gd.from, to: gd.to,
-    turn: gd.turn, finished: false, winner: null
-  };
-  if(gd.game === 'ttt') serialized.state = { board: gd.state.board };
-  else if(gd.game === 'rps') serialized.state = { picks: {} };
-  else if(gd.game === 'dice') serialized.state = { rolls: {} };
-  else if(gd.game === 'target') serialized.state = { shots: {} };
-  else if(gd.game === 'guess') serialized.state = { hints: [], guesses: [] };
-  DB.chats[key].push({ from: 'system', text: '[game-active]' + JSON.stringify(serialized) + '[/game-active]', t: Date.now() });
-  saveDB();
-  res.json({ ok: true });
-});
-
-app.post('/api/game/decline', auth, (req, res) => {
-  const { gameId } = req.body || {};
-  var gd = DB.games[gameId];
-  if(!gd) return res.json({ error: 'Игра не найдена' });
-  if(gd.to !== req.nick) return res.json({ error: 'Только приглашённый' });
-  var key = chatKey(gd.from, gd.to);
-  var msgs = DB.chats[key] || [];
-  for(var i = msgs.length - 1; i >= 0; i--){
-    if(msgs[i].text && msgs[i].text.indexOf('[game-invite]') === 0){
-      try {
-        var d = JSON.parse(msgs[i].text.substring(13, msgs[i].text.indexOf('[/game-invite]')));
-        if(d.gameId === gameId){ msgs.splice(i, 1); }
-      } catch(e){}
-    }
-  }
-  delete DB.games[gameId];
-  saveDB();
-  res.json({ ok: true });
-});
-
-app.post('/api/game/move', auth, (req, res) => {
-  const { gameId, move } = req.body || {};
-  var gd = DB.games[gameId];
-  if(!gd) return res.json({ error: 'Игра не найдена' });
-  if(gd.finished) return res.json({ error: 'Игра окончена' });
-  var me = req.nick;
-  if(gd.from !== me && gd.to !== me) return res.json({ error: 'Не участник' });
-
-  if(gd.game === 'ttt'){
-    if(gd.turn !== me) return res.json({ error: 'Не твой ход' });
-    var cell = move.cell;
-    if(cell === undefined || gd.state.board[cell]) return res.json({ error: 'Нельзя' });
-    gd.state.board[cell] = (me === gd.from) ? '❌' : '⭕';
-    gd.turn = getOpponent(gd, me);
-    var w = checkTTT(gd.state.board);
-    if(w) return finishGame(gd, w === '❌' ? gd.from : gd.to);
-    if(gd.state.board.indexOf('') === -1) return finishGame(gd, null);
-    updateGameMessage(gd);
-    return res.json({ ok: true });
-  }
-  if(gd.game === 'rps'){
-    if(gd.state.picks[me]) return res.json({ error: 'Уже ходил' });
-    gd.state.picks[me] = move.pick;
-    if(gd.state.picks[gd.from] && gd.state.picks[gd.to]){
-      var p1 = gd.state.picks[gd.from], p2 = gd.state.picks[gd.to];
-      var winner = null;
-      if(p1 !== p2){
-        if((p1==='rock'&&p2==='scissors')||(p1==='scissors'&&p2==='paper')||(p1==='paper'&&p2==='rock')) winner = gd.from;
-        else winner = gd.to;
-      }
-      return finishGame(gd, winner);
-    }
-    updateGameMessage(gd);
-    return res.json({ ok: true });
-  }
-  if(gd.game === 'dice'){
-    if(gd.state.rolls[me]) return res.json({ error: 'Уже бросал' });
-    gd.state.rolls[me] = Math.floor(Math.random()*6)+1 + Math.floor(Math.random()*6)+1;
-    if(gd.state.rolls[gd.from] && gd.state.rolls[gd.to]){
-      var r1 = gd.state.rolls[gd.from], r2 = gd.state.rolls[gd.to];
-      var w2 = r1 > r2 ? gd.from : (r2 > r1 ? gd.to : null);
-      return finishGame(gd, w2);
-    }
-    updateGameMessage(gd);
-    return res.json({ ok: true });
-  }
-  if(gd.game === 'target'){
-    if(gd.state.shots[me]) return res.json({ error: 'Уже стрелял' });
-    gd.state.shots[me] = move.shot;
-    if(gd.state.shots[gd.from] && gd.state.shots[gd.to]){
-      var s1 = Math.abs(10 - gd.state.shots[gd.from]);
-      var s2 = Math.abs(10 - gd.state.shots[gd.to]);
-      var w3 = s1 < s2 ? gd.from : (s2 < s1 ? gd.to : null);
-      return finishGame(gd, w3);
-    }
-    updateGameMessage(gd);
-    return res.json({ ok: true });
-  }
-  if(gd.game === 'guess'){
-    if(gd.turn !== me) return res.json({ error: 'Не твой ход' });
-    var g = move.guess;
-    if(!g || g < 1 || g > 100) return res.json({ error: 'От 1 до 100' });
-    gd.state.guesses.push(g);
-    if(g === gd.state.secret){
-      return finishGame(gd, me);
-    } else if(g < gd.state.secret){
-      gd.state.hints.push('⬆️');
-    } else {
-      gd.state.hints.push('⬇️');
-    }
-    gd.turn = getOpponent(gd, me);
-    updateGameMessage(gd);
-    return res.json({ ok: true });
-  }
-  res.json({ error: 'Неизвестная игра' });
-});
-
-function checkTTT(b){
-  var lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-  for(var i=0;i<lines.length;i++){
-    var a=lines[i][0],c=lines[i][1],d=lines[i][2];
-    if(b[a] && b[a] === b[c] && b[a] === b[d]) return b[a];
-  }
-  return null;
-}
-
-app.get('/api/game/state/:gameId', auth, (req, res) => {
-  var gd = DB.games[req.params.gameId];
-  if(!gd) return res.json({ error: 'Игра не найдена' });
-  if(gd.from !== req.nick && gd.to !== req.nick) return res.json({ error: 'Не участник' });
-  res.json({ ok: true, game: serializeGame(gd, req.nick) });
-});
-
 /* ============ МАГАЗИН ============ */
 const SHOP = [
   {id:'nick_blue', title:'Синий ник', desc:'Цвет', price:50, color:'#4a7dff'},
@@ -988,7 +907,7 @@ app.post('/api/admin/broadcast', auth, (req, res) => {
 app.post('/api/admin/wipe', auth, (req, res) => {
   const me = DB.users[req.nick];
   if(!me.isAdmin) return res.json({ error: 'Только админ' });
-  DB = { users:{}, chats:{}, groups:{}, channels:{}, games:{}, tokens:{}, pushSubs:{}, nextId:1, nextChannelId:1, nextFileId:1, nextGameId:1 };
+  DB = { users:{}, chats:{}, groups:{}, channels:{}, botGames:{}, tokens:{}, pushSubs:{}, nextId:1, nextChannelId:1, nextFileId:1 };
   saveDB();
   res.json({ ok: true });
 });

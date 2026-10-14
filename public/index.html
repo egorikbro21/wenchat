@@ -12,6 +12,7 @@
   --bubble-me:#4a7dff; --bubble-me-text:#fff;
   --bubble-you:#e8eaed; --bubble-you-text:#111;
   --danger:#ff4d4d; --admin:#ff2b2b; --group:#22c55e; --channel:#f59e0b;
+  --gift:#f59e0b;
 }
 body.dark{
   --bg:#0f1216; --bg2:#171a1f; --bg3:#22262d;
@@ -32,8 +33,9 @@ input:focus,textarea:focus{border-color:var(--accent)}
 .btn:active{background:var(--accent2)}
 .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
 .btn.danger{background:var(--danger)}
+.btn.gift{background:var(--gift);color:#fff}
 .btn.small{padding:8px 12px;font-size:13px}
-.btn:disabled{opacity:.5}
+.btn:disabled{opacity:.5;cursor:not-allowed}
 .offline-bar{position:fixed;top:0;left:0;right:0;background:var(--danger);color:#fff;text-align:center;padding:8px;font-size:13px;font-weight:600;z-index:999;transform:translateY(-100%);transition:.3s}
 .offline-bar.show{transform:translateY(0)}
 .tabs{display:flex;background:var(--bg2);border-radius:12px;padding:4px;margin-bottom:20px;gap:4px}
@@ -85,6 +87,7 @@ input:focus,textarea:focus{border-color:var(--accent)}
 .bubble{max-width:78%;padding:9px 12px;border-radius:16px;font-size:15px;line-height:1.35;word-wrap:break-word;white-space:pre-wrap;position:relative}
 .bubble.me{align-self:flex-end;background:var(--bubble-me);color:var(--bubble-me-text);border-bottom-right-radius:4px}
 .bubble.you{align-self:flex-start;background:var(--bubble-you);color:var(--bubble-you-text);border-bottom-left-radius:4px}
+.bubble.gift{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;text-align:center;font-weight:700;max-width:80%}
 .bubble .author{font-size:12px;font-weight:700;margin-bottom:3px;color:var(--accent)}
 .bubble .time{font-size:10px;opacity:.65;margin-top:3px;text-align:right}
 .bubble .reply-quote{background:rgba(0,0,0,.15);border-left:3px solid var(--accent);padding:4px 8px;border-radius:6px;font-size:12px;opacity:.85;margin-bottom:4px}
@@ -139,6 +142,11 @@ input:focus,textarea:focus{border-color:var(--accent)}
 .modal-actions .btn{flex:1}
 .react-pick{display:flex;gap:8px;justify-content:center;margin-top:8px}
 .react-pick button{background:var(--bg2);border:1px solid var(--border);border-radius:50%;width:48px;height:48px;font-size:24px;display:flex;align-items:center;justify-content:center}
+.gift-quick{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.gift-quick button{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:14px;font-weight:700;color:var(--text);min-width:70px}
+.gift-quick button:active{background:var(--bg3)}
+.gift-preview{background:var(--bg2);border-radius:12px;padding:14px;text-align:center;margin:10px 0;font-size:15px}
+.gift-preview .coin-big{font-size:28px;font-weight:800;color:var(--gift);display:block;margin:6px 0}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#222;color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;opacity:0;transition:.25s;z-index:200;max-width:90%;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .empty{text-align:center;color:var(--text2);padding:40px 20px;font-size:14px;line-height:1.5}
@@ -200,6 +208,7 @@ input:focus,textarea:focus{border-color:var(--accent)}
       <div class="n" id="cv-name">—</div>
       <div class="sub" id="cv-sub"></div>
     </div>
+    <button class="icon-btn" id="btn-gift" type="button" style="display:none">🎁</button>
     <button class="icon-btn" id="btn-chat-menu" type="button">⋮</button>
   </div>
   <div class="msgs" id="msgs"></div>
@@ -432,6 +441,33 @@ input:focus,textarea:focus{border-color:var(--accent)}
   </div>
 </div>
 
+<div class="modal" id="modal-gift">
+  <div class="modal-box">
+    <h3>🎁 Подарить W коины</h3>
+    <p style="font-size:13px;color:var(--text2);margin:0 0 8px">Кому: <b id="gift-to">—</b></p>
+    <div class="gift-quick">
+      <button type="button" data-gift="50">50</button>
+      <button type="button" data-gift="100">100</button>
+      <button type="button" data-gift="500">500</button>
+      <button type="button" data-gift="1000">1000</button>
+    </div>
+    <div class="field">
+      <label>Количество W (макс 5000)</label>
+      <input id="in-gift-amount" type="number" min="1" max="5000" placeholder="Например, 500" style="text-align:center;font-size:20px;font-weight:700">
+    </div>
+    <div class="gift-preview">
+      Твой баланс: <b><span class="coin">W</span> <span id="gift-my-bal">0</span></b>
+      <span class="coin-big">🎁</span>
+      <span style="font-size:13px;color:var(--text2)">Подаришь: <b id="gift-preview-amount" style="color:var(--gift)">0</b> W</span>
+    </div>
+    <div class="err" id="gift-err"></div>
+    <div class="modal-actions" style="flex-direction:column">
+      <button class="btn gift" id="btn-gift-send" type="button" style="width:100%">🎁 Отправить подарок</button>
+      <button class="btn ghost" id="btn-gift-cancel" type="button" style="width:100%">Отмена</button>
+    </div>
+  </div>
+</div>
+
 <div class="ctx-menu" id="ctx-menu"></div>
 <input type="file" id="file-input" accept="image/*" style="display:none">
 
@@ -458,9 +494,11 @@ function isEmojiOnly(str){
 function isSticker(str){ return str && str.indexOf('[sticker]') === 0 && str.indexOf('[/sticker]') === str.length - 10; }
 function isImage(str){ return str && str.indexOf('[img]') === 0; }
 function isAudio(str){ return str && str.indexOf('[audio]') === 0; }
+function isGift(str){ return str && str.indexOf('[gift]') === 0 && str.indexOf('[/gift]') === str.length - 7; }
 function parseSticker(str){ return str.substring(9, str.length - 10); }
 function parseImg(str){ var e = str.indexOf('[/img]'); return str.substring(5, e > 0 ? e : str.length); }
 function parseAudio(str){ var e = str.indexOf('[/audio]'); return str.substring(7, e > 0 ? e : str.length); }
+function parseGift(str){ try { return JSON.parse(str.substring(6, str.length - 7)); } catch(e){ return null; } }
 
 var ME = null;
 var TOKEN = localStorage.getItem('wc_token') || null;
@@ -585,6 +623,7 @@ function checkNewMessages(){
               if(isSticker(body)) body = '[стикер]';
               else if(isImage(body)) body = '[картинка]';
               else if(isAudio(body)) body = '[голосовое]';
+              else if(isGift(body)) body = '🎁 Подарок W';
               new Notification(last.from, { body: body.slice(0, 100), tag: 'wc-' + last.from });
             } catch(e){}
           }
@@ -782,6 +821,9 @@ function openPrivate(nick){
   av.style.background = u.color || '';
   $('in-msg').disabled = false;
   $('in-msg').placeholder = 'Сообщение...';
+  // Кнопка подарка — только для личного чата, не бот, не себе
+  var showGift = !u.isBot && nick !== ME.nick;
+  $('btn-gift').style.display = showGift ? 'flex' : 'none';
   show('scr-chat');
   lastMsgsJson = '';
   refreshMsgs();
@@ -799,6 +841,7 @@ function openGroup(gid){
   av.style.background = '';
   $('in-msg').disabled = false;
   $('in-msg').placeholder = 'Сообщение...';
+  $('btn-gift').style.display = 'none';
   show('scr-chat');
   lastMsgsJson = '';
   refreshMsgs();
@@ -817,6 +860,7 @@ function openChannel(cid){
   var canWrite = (ch.owner === ME.nick) || ME.isAdmin;
   $('in-msg').disabled = !canWrite;
   $('in-msg').placeholder = canWrite ? 'Сообщение...' : 'Только владелец может писать';
+  $('btn-gift').style.display = 'none';
   show('scr-chat');
   lastMsgsJson = '';
   refreshMsgs();
@@ -869,6 +913,12 @@ function renderMsgs(msgs){
       imgEl.addEventListener('click', function(){ openImg(parseImg(text)); });
     } else if(isAudio(text)){
       d.innerHTML = authorHtml + '🎙<audio controls src="'+esc(parseAudio(text))+'"></audio><div class="time">'+time+'</div>';
+    } else if(isGift(text)){
+      var gd = parseGift(text);
+      d.classList.add('gift');
+      d.classList.remove('me'); d.classList.remove('you');
+      var giftText = gd ? ('🎁 ' + gd.from + ' подарил ' + gd.to + ' ' + gd.amount + ' W') : '🎁 Подарок';
+      d.innerHTML = giftText + '<div class="time">'+time+'</div>';
     } else {
       if(isEmojiOnly(text)) d.classList.add('emoji-only');
       var replyHtml = '';
@@ -942,8 +992,10 @@ function openMsgMenu(idx){
     if(isSticker(txt)) txt = '[стикер]';
     else if(isImage(txt)) txt = '[картинка]';
     else if(isAudio(txt)) txt = '[голосовое]';
+    else if(isGift(txt)){ var gd=parseGift(txt); txt = gd ? '🎁 Подарок ' + gd.amount + ' W' : '🎁 Подарок'; }
     $('msg-text').textContent = m.from + ': ' + txt;
-    $('btn-msg-edit').style.display = (m.from === ME.nick && m.text && !isSticker(m.text) && !isImage(m.text) && !isAudio(m.text)) ? 'block' : 'none';
+    var canEdit = (m.from === ME.nick && m.text && !isSticker(m.text) && !isImage(m.text) && !isAudio(m.text) && !isGift(m.text));
+    $('btn-msg-edit').style.display = canEdit ? 'block' : 'none';
     $('modal-msg').classList.add('active');
   });
 }
@@ -1047,8 +1099,69 @@ $('btn-back').addEventListener('click', function(){
   replyTo=null;
   $('in-msg').disabled = false;
   $('in-msg').placeholder = 'Сообщение...';
+  $('btn-gift').style.display = 'none';
   lastMsgsJson = '';
   renderChats();
+});
+
+/* ============ ПОДАРКИ ============ */
+$('btn-gift').addEventListener('click', function(){
+  if(!currentChat){ toast('Только в личном чате'); return; }
+  var u = USERS[currentChat];
+  if(!u || u.isBot){ toast('Боту нельзя'); return; }
+  if(currentChat === ME.nick){ toast('Себе нельзя'); return; }
+  $('gift-to').textContent = currentChat;
+  $('in-gift-amount').value = '';
+  $('gift-preview-amount').textContent = '0';
+  $('gift-my-bal').textContent = ME.coins;
+  $('gift-err').textContent = '';
+  $('btn-gift-send').disabled = false;
+  $('modal-gift').classList.add('active');
+});
+$('btn-gift-cancel').addEventListener('click', function(){ $('modal-gift').classList.remove('active'); });
+
+var quickGiftBtns = document.querySelectorAll('[data-gift]');
+for(var qg=0;qg<quickGiftBtns.length;qg++){
+  (function(btn){
+    btn.addEventListener('click', function(){
+      $('in-gift-amount').value = btn.getAttribute('data-gift');
+      updateGiftPreview();
+    });
+  })(quickGiftBtns[qg]);
+}
+$('in-gift-amount').addEventListener('input', updateGiftPreview);
+
+function updateGiftPreview(){
+  var v = parseInt($('in-gift-amount').value) || 0;
+  if(v < 0) v = 0;
+  if(v > 5000) v = 5000;
+  $('gift-preview-amount').textContent = v;
+  var err = '';
+  if(v <= 0) err = '';
+  else if(v > ME.coins) err = '❌ Недостаточно W (у тебя ' + ME.coins + ')';
+  else if(v > 5000) err = '❌ Максимум 5000 W';
+  $('gift-err').textContent = err;
+  $('btn-gift-send').disabled = v <= 0 || v > ME.coins || v > 5000;
+}
+
+$('btn-gift-send').addEventListener('click', function(){
+  var v = parseInt($('in-gift-amount').value) || 0;
+  if(v <= 0){ toast('Введи сумму'); return; }
+  if(v > 5000){ toast('Максимум 5000'); return; }
+  if(v > ME.coins){ toast('Недостаточно W'); return; }
+  if(!confirm('Подарить ' + currentChat + ' ' + v + ' W?')) return;
+  $('btn-gift-send').disabled = true;
+  api('/gift/send', { method:'POST', body:{ to: currentChat, amount: v } }).then(function(res){
+    if(res.error){ toast('❌ ' + res.error); $('btn-gift-send').disabled = false; return; }
+    $('modal-gift').classList.remove('active');
+    toast('🎁 Подарено ' + v + ' W');
+    if(res.me) ME = res.me;
+    loadUsers().then(function(){
+      lastMsgsJson = '';
+      refreshMsgs();
+      renderChats();
+    });
+  });
 });
 
 function getUnreadCount(key, type){

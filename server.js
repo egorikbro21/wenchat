@@ -311,7 +311,6 @@ function checkTTT(b){
 function botReply(text, userNick){
   const t = (text || '').trim(), low = t.toLowerCase();
 
-  // 1. Приоритет команд
   if(low === '/game' || low === '/игра' || low === 'игра' || low === 'игры' || low === 'game' || low === '🎮'){
     if(DB.botGames[userNick]){ delete DB.botGames[userNick]; saveDB(); }
     return GAME_LIST;
@@ -321,15 +320,11 @@ function botReply(text, userNick){
     return '🤖 Мои команды:\n\n📌 Базовое:\n/help, /ping, /id, /time, /date\n\n🧮 Полезное:\n/calc 2+2, /random 1 100, /coin, /dice, /password 16\n\n🎮 Игры:\n/game — список игр\n\n🌍 Инфо:\n/weather Москва, /wiki Россия\n\n🎉 Приколы:\n/joke, /fact, /quote, /8ball, /love';
   }
 
-  // 2. Активная игра
   if(DB.botGames[userNick]){
-    // Если пришло /help или /game — уже обработали выше
-    // Если пришло число 1-5 и оно совпадает с новой игрой — не переключаем
     var gameResult = playBotGame(userNick, text);
     if(gameResult) return gameResult;
   }
 
-  // 3. Выбор игры (1-5) — если нет активной
   if(!DB.botGames[userNick] && ['1','2','3','4','5'].indexOf(low) !== -1){
     var started = startBotGame(userNick, low);
     if(started) return started;
@@ -340,7 +335,6 @@ function botReply(text, userNick){
     if(started2) return started2;
   }
 
-  // 4. Обычные команды
   if(low === '/ping') return '🏓 Понг!';
   if(low === '/id') return '🆔 ID в ⚙️ Настройки';
   if(low === '/time') return '🕐 ' + new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
@@ -586,12 +580,47 @@ app.post('/api/msg/delete', auth, (req, res) => {
   const arr = DB.chats[key];
   if(!arr || !arr[idx]) return res.json({ error: 'Нет сообщения' });
   const m = arr[idx];
-  if(m.from !== req.nick && !me.isAdmin) return res.json({ error: 'Только свои или админ' });
+  // Gift-сообщение может удалить только отправитель (он же from) или админ
+  if(m.text && m.text.indexOf('[gift]') === 0){
+    var gd = null;
+    try { gd = JSON.parse(m.text.substring(6, m.text.indexOf('[/gift]'))); } catch(e){}
+    if(gd && gd.from !== req.nick && !me.isAdmin) return res.json({ error: 'Только отправитель подарка' });
+  } else {
+    if(m.from !== req.nick && !me.isAdmin) return res.json({ error: 'Только свои или админ' });
+  }
   var fileUrl = extractFileUrl(m.text);
   arr.splice(idx, 1);
   saveDB();
   if(fileUrl) setTimeout(function(){ deleteFileIfUnused(fileUrl); }, 100);
   res.json({ ok: true });
+});
+
+/* ============ ПОДАРКИ ============ */
+app.post('/api/gift/send', auth, (req, res) => {
+  const me = DB.users[req.nick];
+  const { to, amount } = req.body || {};
+  if(me.banned) return res.json({ error: 'Ты забанен' });
+  if(!to) return res.json({ error: 'Не указан получатель' });
+  if(to === req.nick) return res.json({ error: 'Себе нельзя' });
+  var u = DB.users[to];
+  if(!u) return res.json({ error: 'Получатель не найден' });
+  if(u.isBot) return res.json({ error: 'Боту нельзя' });
+  var amt = parseInt(amount);
+  if(!amt || amt <= 0) return res.json({ error: 'Введи сумму больше 0' });
+  if(amt > 5000) return res.json({ error: 'Максимум 5000 W' });
+  if(amt > me.coins) return res.json({ error: 'Недостаточно W (у тебя ' + me.coins + ')' });
+
+  me.coins -= amt;
+  u.coins += amt;
+
+  var key = chatKey(req.nick, to);
+  if(!DB.chats[key]) DB.chats[key] = [];
+  var giftText = '[gift]' + JSON.stringify({ from: req.nick, to: to, amount: amt }) + '[/gift]';
+  DB.chats[key].push({ from: req.nick, text: giftText, t: Date.now() });
+
+  saveDB();
+  console.log('Gift:', req.nick, '→', to, amt, 'W');
+  res.json({ ok: true, me: publicUser(me), to: publicUser(u) });
 });
 
 /* ============ АДМИН: УДАЛЕНИЕ МЕДИА ============ */

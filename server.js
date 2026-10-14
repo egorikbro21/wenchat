@@ -86,6 +86,8 @@ function publicUser(u){
     isAdmin: !!u.isAdmin, color: u.color || null,
     badge: u.badge || null, avatar: u.avatar || null,
     theme: u.theme || null,
+    title: u.title || null,
+    frame: u.frame || null,
     banned: !!u.banned, banReason: u.banReason || null,
     purchases: u.purchases || [],
     removedItems: u.removedItems || [],
@@ -101,6 +103,7 @@ function ensureBot(){
       nick: BOT_NICK, pass: 'bot_' + Math.random().toString(36).slice(2),
       id: BOT_ID, coins: 0, isAdmin: false,
       color: '#a855f7', badge: '🤖', avatar: '🤖', theme: null,
+      title: null, frame: null,
       banned: false, banReason: null,
       purchases: [], contacts: [], removedItems: [], channels: [],
       isBot: true, status: 'online', bio: 'Я Wenbot, помогу чем смогу! Играй: /game'
@@ -420,6 +423,7 @@ app.post('/api/register', (req, res) => {
   DB.users[nick] = {
     nick, pass, id: newId, coins: 0, isAdmin: isOwner,
     color: isOwner ? '#ff2b2b' : null, badge: null, avatar: null, theme: null,
+    title: null, frame: null,
     banned: false, banReason: null,
     purchases: [], removedItems: [], contacts: [], channels: [],
     status: 'online', bio: ''
@@ -580,7 +584,6 @@ app.post('/api/msg/delete', auth, (req, res) => {
   const arr = DB.chats[key];
   if(!arr || !arr[idx]) return res.json({ error: 'Нет сообщения' });
   const m = arr[idx];
-  // Gift-сообщение может удалить только отправитель (он же from) или админ
   if(m.text && m.text.indexOf('[gift]') === 0){
     var gd = null;
     try { gd = JSON.parse(m.text.substring(6, m.text.indexOf('[/gift]'))); } catch(e){}
@@ -721,6 +724,7 @@ app.post('/api/channels/create', auth, (req, res) => {
 
 /* ============ МАГАЗИН ============ */
 const SHOP = [
+  // Цвета ников (старые)
   {id:'nick_blue', title:'Синий ник', desc:'Цвет', price:50, color:'#4a7dff'},
   {id:'nick_green', title:'Зелёный ник', desc:'Цвет', price:50, color:'#22c55e'},
   {id:'nick_purple', title:'Фиолетовый ник', desc:'Цвет', price:80, color:'#a855f7'},
@@ -728,6 +732,13 @@ const SHOP = [
   {id:'nick_pink', title:'Розовый ник', desc:'Цвет', price:80, color:'#ff4d9e'},
   {id:'nick_cyan', title:'Голубой ник', desc:'Цвет', price:70, color:'#06b6d4'},
   {id:'nick_orange', title:'Оранжевый ник', desc:'Цвет', price:70, color:'#ff7a00'},
+  // 🎁 5 НОВЫХ НЕДОРОГИХ
+  {id:'nick_brown', title:'Коричневый ник', desc:'Цвет', price:40, color:'#8B4513'},
+  {id:'nick_gray', title:'Серый ник', desc:'Цвет', price:40, color:'#808080'},
+  {id:'nick_lime', title:'Лаймовый ник', desc:'Цвет', price:60, color:'#84cc16'},
+  {id:'badge_moon', title:'Значок 🌙', desc:'', price:90, badge:'🌙'},
+  {id:'badge_flower', title:'Значок 🌸', desc:'', price:90, badge:'🌸'},
+  // Значки (старые)
   {id:'badge_star', title:'Значок ⭐', desc:'', price:100, badge:'⭐'},
   {id:'badge_fire', title:'Значок 🔥', desc:'', price:120, badge:'🔥'},
   {id:'badge_crown', title:'Значок 👑', desc:'', price:250, badge:'👑'},
@@ -736,6 +747,7 @@ const SHOP = [
   {id:'badge_diamond', title:'Значок 💎', desc:'', price:300, badge:'💎'},
   {id:'badge_skull', title:'Значок 💀', desc:'', price:220, badge:'💀'},
   {id:'badge_ghost', title:'Значок 👻', desc:'', price:150, badge:'👻'},
+  // Аватары (старые)
   {id:'av_cat', title:'Аватар 🐱', desc:'', price:30, avatar:'🐱'},
   {id:'av_dog', title:'Аватар 🐶', desc:'', price:30, avatar:'🐶'},
   {id:'av_fox', title:'Аватар 🦊', desc:'', price:50, avatar:'🦊'},
@@ -789,8 +801,28 @@ const SHOP = [
   {id:'av_guitar', title:'Аватар 🎸', desc:'', price:100, avatar:'🎸'},
   {id:'av_soccer', title:'Аватар ⚽', desc:'', price:80, avatar:'⚽'},
   {id:'av_basket', title:'Аватар 🏀', desc:'', price:80, avatar:'🏀'},
+  // 🌟 ЛЕГЕНДАРНЫЕ АВАТАРЫ
+  {id:'av_eagle', title:'🦅 Орёл', desc:'Легендарный', price:5000, avatar:'🦅'},
+  {id:'av_wolf', title:'🐺 Волк', desc:'Легендарный', price:6000, avatar:'🐺'},
+  {id:'av_dragon_legend', title:'🐉 Дракон-легенда', desc:'Легендарный', price:8000, avatar:'🐉'},
+  {id:'av_phoenix', title:'🦅🔥 Феникс', desc:'Легендарный', price:10000, avatar:'🦅'},
+  {id:'av_king', title:'👑 Король', desc:'Легендарный', price:12000, avatar:'👑'},
+  // 🎨 ТЕМЫ (старые)
   {id:'theme_gold', title:'Золотая тема', desc:'', price:400, theme:'gold'},
-  {id:'theme_neon', title:'Неоновая тема', desc:'', price:400, theme:'neon'}
+  {id:'theme_neon', title:'Неоновая тема', desc:'', price:400, theme:'neon'},
+  // 🎨 ТЕМЫ (новые)
+  {id:'theme_space', title:'🌌 Космическая тема', desc:'Фиолетовые акценты', price:25000, theme:'space'},
+  {id:'theme_blood', title:'🩸 Кровавая тема', desc:'Красные акценты', price:30000, theme:'blood'},
+  {id:'theme_hacker', title:'💚 Хакер', desc:'Зелёный на чёрном', price:35000, theme:'hacker'},
+  {id:'theme_royal', title:'👑 Королевская тема', desc:'Фиолет+золото', price:40000, theme:'royal'},
+  // 🏆 ТИТУЛЫ
+  {id:'title_fast', title:'⚡ Быстрый', desc:'Титул', price:50000, title:'⚡ Быстрый'},
+  {id:'title_star', title:'🌟 Звезда', desc:'Титул', price:50000, title:'🌟 Звезда'},
+  {id:'title_unstoppable', title:'🔥 Неудержимый', desc:'Титул', price:50000, title:'🔥 Неудержимый'},
+  {id:'title_legend', title:'💎 Легенда', desc:'Титул', price:70000, title:'💎 Легенда'},
+  {id:'title_king', title:'👑 Король Wenchat', desc:'Титул', price:150000, title:'👑 Король Wenchat'},
+  // 📋 ЗАЯВКА НА АДМИНА
+  {id:'admin_apply', title:'📋 Заявка на админа', desc:'Доказательство готовности. Свяжись с создателем', price:90000}
 ];
 
 app.get('/api/shop', auth, (req, res) => res.json(SHOP));
@@ -809,6 +841,8 @@ app.post('/api/shop/buy', auth, (req, res) => {
   if(item.badge) me.badge = item.badge;
   if(item.avatar) me.avatar = item.avatar;
   if(item.theme) me.theme = item.theme;
+  if(item.title) me.title = item.title;
+  if(item.frame) me.frame = item.frame;
   saveDB();
   res.json({ ok: true, user: publicUser(me) });
 });
@@ -826,6 +860,8 @@ app.post('/api/shop/unequip', auth, (req, res) => {
   if(item.badge && me.badge === item.badge) me.badge = null;
   if(item.avatar && me.avatar === item.avatar) me.avatar = null;
   if(item.theme && me.theme === item.theme) me.theme = null;
+  if(item.title && me.title === item.title) me.title = null;
+  if(item.frame && me.frame === item.frame) me.frame = null;
   saveDB();
   res.json({ ok: true, user: publicUser(me) });
 });
@@ -844,6 +880,8 @@ app.post('/api/shop/re-equip', auth, (req, res) => {
   if(item.badge) me.badge = item.badge;
   if(item.avatar) me.avatar = item.avatar;
   if(item.theme) me.theme = item.theme;
+  if(item.title) me.title = item.title;
+  if(item.frame) me.frame = item.frame;
   saveDB();
   res.json({ ok: true, user: publicUser(me) });
 });

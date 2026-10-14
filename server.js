@@ -802,11 +802,11 @@ const SHOP = [
   {id:'av_soccer', title:'Аватар ⚽', desc:'', price:80, avatar:'⚽'},
   {id:'av_basket', title:'Аватар 🏀', desc:'', price:80, avatar:'🏀'},
   // 🌟 ЛЕГЕНДАРНЫЕ АВАТАРЫ
-  {id:'av_eagle', title:'🦅 Орёл', desc:'Легендарный', price:5000, avatar:'🦅'},
-  {id:'av_wolf', title:'🐺 Волк', desc:'Легендарный', price:6000, avatar:'🐺'},
-  {id:'av_dragon_legend', title:'🐉 Дракон-легенда', desc:'Легендарный', price:8000, avatar:'🐉'},
-  {id:'av_phoenix', title:'🦅🔥 Феникс', desc:'Легендарный', price:10000, avatar:'🦅'},
-  {id:'av_king', title:'👑 Король', desc:'Легендарный', price:12000, avatar:'👑'},
+  {id:'av_eagle', title:'🦅 Орёл', desc:'Легендарный Аватар', price:5000, avatar:'🦅'},
+  {id:'av_wolf', title:'🐺 Волк', desc:'Легендарный Аватар', price:6000, avatar:'🐺'},
+  {id:'av_dragon_legend', title:'🐉 Дракон-легенда ', desc:'Легендарный Аватар', price:8000, avatar:'🐉'},
+  {id:'av_phoenix', title:'🦅🔥 Феникс', desc:'Легендарный Аватар', price:10000, avatar:'🦅'},
+  {id:'av_king', title:'👑 Король', desc:'Легендарный Аватар', price:12000, avatar:'👑'},
   // 🎨 ТЕМЫ (старые)
   {id:'theme_gold', title:'Золотая тема', desc:'', price:400, theme:'gold'},
   {id:'theme_neon', title:'Неоновая тема', desc:'', price:400, theme:'neon'},
@@ -822,7 +822,7 @@ const SHOP = [
   {id:'title_legend', title:'💎 Легенда', desc:'Титул', price:70000, title:'💎 Легенда'},
   {id:'title_king', title:'👑 Король Wenchat', desc:'Титул', price:150000, title:'👑 Король Wenchat'},
   // 📋 ЗАЯВКА НА АДМИНА
-  {id:'admin_apply', title:'📋 Заявка на админа', desc:'Доказательство готовности. Свяжись с создателем', price:90000}
+  {id:'admin_apply', title:'📋 Заявка на админа', desc:'Доказательство готовности. Свяжись с создателем', price:100000}
 ];
 
 app.get('/api/shop', auth, (req, res) => res.json(SHOP));
